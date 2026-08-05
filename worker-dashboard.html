@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Dashboard - Pune Home Services</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: #f0f2f5; padding: 20px; }
+        .header { background: #fff; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto 20px auto; }
+        .duty-status { display: flex; align-items: center; gap: 10px; }
+        
+        /* Duty Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #28a745; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .dashboard-container { max-width: 600px; margin: 0 auto; }
+        .status-banner { background: #e9ecef; color: #6c757d; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 20px; }
+        .status-banner.online { background: #d4edda; color: #155724; }
+
+        /* Order Card */
+        .order-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; display: none; }
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .service-badge { background: #007bff; color: white; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        .order-details p { margin: 6px 0; color: #444; font-size: 14px; }
+        .order-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin: 10px 0; border: 1px solid #ddd; }
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-accept { background: #28a745; color: white; }
+        .btn-reject { background: #dc3545; color: white; }
+        .btn-accept:hover { background: #218838; }
+        .btn-reject:hover { background: #c82333; }
+        #acceptAlert { display: none; background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h3 style="margin: 0;">वर्कर डॅशबोर्ड</h3>
+        <small style="color: #666;">एरिया: <strong id="workerAreaName">Katraj</strong></small>
+    </div>
+    <div class="duty-status">
+        <span id="dutyLabel" style="font-size: 14px; font-weight: bold; color: #777;">Duty OFF</span>
+        <label class="switch">
+            <input type="checkbox" id="dutyToggle" onchange="toggleDuty()">
+            <span class="slider"></span>
+        </label>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <div class="status-banner" id="statusBanner">
+        तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.
+    </div>
+
+    <!-- आलेली ऑर्डर (Sample Order Card) -->
+    <div class="order-card" id="orderCard">
+        <div class="order-header">
+            <span class="service-badge">Plumbing (नळ दुरुस्ती)</span>
+            <span style="font-weight: bold; color: #28a745;">ऑफर: ₹350</span>
+        </div>
+        <div class="order-details">
+            <p><strong>लोकेशन:</strong> Katraj (Near Bharati Vidyapeeth)</p>
+            <p><strong>वेळ:</strong> आज, संध्याकाळी 5:00 वाजता</p>
+            <p><strong>कामाचा फोटो:</strong></p>
+            <!-- सॅम्पल फोटो -->
+            <img src="https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500" alt="Work Photo" class="order-img">
+        </div>
+        <div class="action-btns" id="actionBtns">
+            <button class="btn btn-accept" onclick="acceptOrder()">Accept Order</button>
+            <button class="btn btn-reject" onclick="rejectOrder()">Reject</button>
+        </div>
+        <div id="acceptAlert">
+            ऑर्डर यशस्वीरित्या कन्फर्म झाली आहे! कस्टमरला मेसेज पाठवला गेला आहे.<br>
+            <strong>कस्टमर फोन: 9876543210</strong>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDuty() {
+        const isChecked = document.getElementById('dutyToggle').checked;
+        const dutyLabel = document.getElementById('dutyLabel');
+        const statusBanner = document.getElementById('statusBanner');
+        const orderCard = document.getElementById('orderCard');
+
+        if (isChecked) {
+            dutyLabel.innerText = "Duty ON";
+            dutyLabel.style.color = "#28a745";
+            statusBanner.innerText = "तुम्ही सध्या ONLINE आहात. नवीन ऑर्डर्स शोधत आहे...";
+            statusBanner.classList.add('online');
+            
+            // २ सेकंदानंतर सॅम्पल ऑर्डर दाखवा (Simulate Notification)
+            setTimeout(() => {
+                orderCard.style.display = 'block';
+            }, 1500);
+        } else {
+            dutyLabel.innerText = "Duty OFF";
+            dutyLabel.style.color = "#777";
+            statusBanner.innerText = "तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.";
+            statusBanner.classList.remove('online');
+            orderCard.style.display = 'none';
+        }
+    }
+
+    function acceptOrder() {
+        document.getElementById('actionBtns').style.display = 'none';
+        document.getElementById('acceptAlert').style.display = 'block';
+    }
+
+    function rejectOrder() {
+        document.getElementById('orderCard').style.display = 'none';
+        alert('ऑर्डर रिजेक्ट केली आहे.');
+    }
+</script>
+
+</body>
+</html>

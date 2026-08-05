@@ -3,18 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>माझे पहिले वेबपेज</title>
+    <title>Pune Home Services - Login</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { margin-bottom: 20px; color: #333; }
+        .role-selector { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .role-btn { flex: 1; padding: 10px; margin: 0 5px; border: 1px solid #007bff; background: #fff; color: #007bff; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .role-btn.active { background: #007bff; color: #fff; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #555; }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .submit-btn { width: 100%; padding: 12px; background: #28a745; border: none; color: white; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .submit-btn:hover { background: #218838; }
+    </style>
 </head>
 <body>
 
-    <h1>जीवलग हेडिंग (Heading)</h1>
-    <p>हा एक साधा पॅराग्राफ (Paragraph) आहे.</p>
+<div class="container">
+    <h2>पुणे होम सर्व्हिसेस</h2>
+    <p style="margin-bottom: 15px; color: #666;">लॉगिन प्रकार निवडा</p>
+    
+    <div class="role-selector">
+        <button class="role-btn active" id="custBtn" onclick="selectRole('customer')">Customer</button>
+        <button class="role-btn" id="workBtn" onclick="selectRole('worker')">Worker</button>
+    </div>
 
-    <!-- लिंक जोडण्यासाठी -->
-    <a href="https://www.google.com">गूगलवर जा</a>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+        <input type="hidden" id="userRole" value="customer">
+        
+        <div class="input-group">
+            <label>मोबाईल नंबर / ई-मेल</label>
+            <input type="text" id="username" placeholder="उदा. 9876543210" required>
+        </div>
+        
+        <div class="input-group">
+            <label>पासवर्ड</label>
+            <input type="password" id="password" placeholder="******" required>
+        </div>
 
-    <!-- इमेज जोडण्यासाठी -->
-    <!-- <img src="image.jpg" alt="फोटोचे नाव"> -->
+        <div class="input-group" id="areaGroup" style="display: none;">
+            <label>तुमचा काम करण्याचा एरिया (Worker Only)</label>
+            <select id="workerArea">
+                <option value="Swargate">Swargate</option>
+                <option value="Katraj">Katraj</option>
+                <option value="Shivaji Nagar">Shivaji Nagar</option>
+                <option value="Kothrud">Kothrud</option>
+                <option value="Hadapsar">Hadapsar</option>
+                <option value="Deccan">Deccan</option>
+            </select>
+        </div>
+
+        <button type="submit" class="submit-btn">लॉगिन करा</button>
+    </form>
+</div>
+
+<script>
+    function selectRole(role) {
+        document.getElementById('userRole').value = role;
+        const custBtn = document.getElementById('custBtn');
+        const workBtn = document.getElementById('workBtn');
+        const areaGroup = document.getElementById('areaGroup');
+
+        if (role === 'customer') {
+            custBtn.classList.add('active');
+            workBtn.classList.remove('active');
+            areaGroup.style.display = 'none';
+        } else {
+            workBtn.classList.add('active');
+            custBtn.classList.remove('active');
+            areaGroup.style.display = 'block';
+        }
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const role = document.getElementById('userRole').value;
+        if (role === 'customer') {
+            window.location.href = 'customer-booking.html';
+        } else {
+            window.location.href = 'worker-dashboard.html';
+        }
+    }
+</script>
 
 </body>
 </html>

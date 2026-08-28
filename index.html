@@ -255,16 +255,19 @@
                     localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
                 }
                 
-                let sessionUser = JSON.parse(localStorage.getItem('gharkam_user_' + pendingUserData.mobile)) || pendingUserData;
-                localStorage.setItem('current_user_session', JSON.stringify(sessionUser));
+                // जर Sign In मोड असेल, तर स्टोअर केलेल्या डेटाचा रोल किंवा सध्याचा सिलेक्ट केलेला रोल वापरणे
+                let savedUser = JSON.parse(localStorage.getItem('gharkam_user_' + pendingUserData.mobile)) || pendingUserData;
+                savedUser.role = currentRole; // सध्या सिलेक्ट केलेला रोल अपडेट ठेवणे
+                
+                localStorage.setItem('current_user_session', JSON.stringify(savedUser));
 
                 showStatus("🎉 Verification Successful! Redirecting...", "success");
 
-                // Relative Navigation sathi exact relative path
+                // सिलेक्ट केलेल्या रोलनुसार रीडायरेक्ट करा
                 setTimeout(() => {
                     if (currentRole === 'customer') {
                         window.location.href = "./customer.html";
-                    } else {
+                    } else if (currentRole === 'worker') {
                         window.location.href = "./worker.html";
                     }
                 }, 800);

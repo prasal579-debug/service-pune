@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Booking</title>
+    <title>Customer Booking - Gharkam.com</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: #f4f7f6; padding: 20px; }
@@ -25,18 +25,18 @@
     <form id="bookingForm" onsubmit="submitBooking(event)">
         <div class="form-group">
             <label>कामाचा प्रकार निवडा</label>
-            <select required>
+            <select id="serviceType" required>
                 <option value="">निवडा...</option>
-                <option value="Plumbing">Plumbing (नळ दुरुस्ती)</option>
-                <option value="Electrician">Electrician (इलेक्ट्रिशियन)</option>
-                <option value="Painter">Painter (कलर काम)</option>
-                <option value="Housekeeper">Housekeeper (घरची स्वच्छता)</option>
+                <option value="Plumbing (नळ दुरुस्ती)">Plumbing (नळ दुरुस्ती)</option>
+                <option value="Electrician (इलेक्ट्रिशियन)">Electrician (इलेक्ट्रिशियन)</option>
+                <option value="Painter (कलर काम)">Painter (कलर काम)</option>
+                <option value="Housekeeper (घरची स्वच्छता)">Housekeeper (घरची स्वच्छता)</option>
             </select>
         </div>
 
         <div class="form-group">
             <label>पुण्यातील एरिया निवडा</label>
-            <select required>
+            <select id="area" required>
                 <option value="">एरिया निवडा...</option>
                 <option value="Swargate">Swargate</option>
                 <option value="Katraj">Katraj</option>
@@ -49,32 +49,65 @@
 
         <div class="form-group">
             <label>तारीख आणि वेळ</label>
-            <input type="datetime-local" required>
+            <input type="datetime-local" id="timeSlot" required>
         </div>
 
         <div class="form-group">
             <label>कामाचा फोटो अपलोड करा</label>
-            <input type="file" accept="image/*" required>
+            <input type="file" id="jobPhoto" accept="image/*" required>
         </div>
 
         <div class="form-group">
             <label>तुम्ही देणारे पेमेंट (₹ मध्ये)</label>
-            <input type="number" placeholder="उदा. 300" min="50" required>
+            <input type="number" id="price" placeholder="उदा. 300" min="50" required>
         </div>
 
         <button type="submit" class="btn-submit">बुकिंग सबमिट करा</button>
     </form>
 
     <div id="statusMessage">
-        Your appointment is confirmed!
+        तुमची ऑर्डर यशस्वीरित्या नोंदवली गेली आहे! वर्कर शोधत आहे...
     </div>
 </div>
 
 <script>
     function submitBooking(e) {
         e.preventDefault();
-        // रिअल प्रोजेक्टमध्ये हा डेटा डेटाबेसमध्ये सेव्ह केला जाईल
-        document.getElementById('statusMessage').style.display = 'block';
+
+        const serviceType = document.getElementById('serviceType').value;
+        const area = document.getElementById('area').value;
+        const timeSlot = document.getElementById('timeSlot').value;
+        const price = document.getElementById('price').value;
+        const photoInput = document.getElementById('jobPhoto');
+
+        let sessionUser = JSON.parse(localStorage.getItem('current_user_session')) || {};
+        let customerPhone = sessionUser.mobile || "9876543210";
+
+        const processOrder = (photoBase64) => {
+            const bookingData = {
+                serviceType,
+                area,
+                timeSlot,
+                price,
+                photo: photoBase64,
+                customerPhone,
+                status: 'pending'
+            };
+
+            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
+            document.getElementById('statusMessage').style.display = 'block';
+            document.getElementById('bookingForm').reset();
+        };
+
+        if (photoInput.files && photoInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                processOrder(evt.target.result);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            processOrder("https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500");
+        }
     }
 </script>
 

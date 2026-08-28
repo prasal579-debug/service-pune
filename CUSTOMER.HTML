@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Booking - Gharkam.com</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: #f4f7f6; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h3 { color: #333; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-submit { width: 100%; padding: 12px; background: #007bff; border: none; color: white; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-submit:hover { background: #0056b3; }
+        
+        /* Order Preview Card Styles */
+        .order-preview { display: none; background: #fff; border-left: 5px solid #28a745; }
+        .badge { background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge.accepted { background: #28a745; color: #fff; }
+        .order-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin: 10px 0; border: 1px solid #ddd; }
+        .btn-cancel { width: 100%; padding: 10px; background: #dc3545; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- My Active Order (Kay Order Takli Ahe Te) -->
+    <div class="card order-preview" id="activeOrderCard">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #333;">📋 तुमची ॲक्टिव्ह बुकिंग</h4>
+            <span class="badge" id="orderStatusBadge">वर्कर शोधत आहे...</span>
+        </div>
+        
+        <p><strong>कामाचा प्रकार:</strong> <span id="dispService">--</span></p>
+        <p><strong>एरिया:</strong> <span id="dispArea">--</span></p>
+        <p><strong>तारीख व वेळ:</strong> <span id="dispTime">--</span></p>
+        <p><strong>ठरलेले पेमेंट:</strong> ₹<span id="dispPrice">0</span></p>
+        <p style="margin-top: 8px;"><strong>अपलोड केलेला फोटो:</strong></p>
+        <img id="dispImage" src="" alt="Job Photo" class="order-img">
+
+        <button class="btn-cancel" onclick="cancelBooking()">बुकिंग कॅन्सल करा</button>
+    </div>
+
+    <!-- Booking Form -->
+    <div class="card" id="bookingFormCard">
+        <h3>नवीन बुकिंग करा</h3>
+        
+        <form id="bookingForm" onsubmit="submitBooking(event)">
+            <div class="form-group">
+                <label>कामाचा प्रकार निवडा</label>
+                <select id="serviceType" required>
+                    <option value="">निवडा...</option>
+                    <option value="Plumbing (नळ दुरुस्ती)">Plumbing (नळ दुरुस्ती)</option>
+                    <option value="Electrician (इलेक्ट्रिशियन)">Electrician (इलेक्ट्रिशियन)</option>
+                    <option value="Painter (कलर काम)">Painter (कलर काम)</option>
+                    <option value="Housekeeper (घरची स्वच्छता)">Housekeeper (घरची स्वच्छता)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>पुण्यातील एरिया निवडा</label>
+                <select id="area" required>
+                    <option value="">एरिया निवडा...</option>
+                    <option value="Swargate">Swargate</option>
+                    <option value="Katraj">Katraj</option>
+                    <option value="Shivaji Nagar">Shivaji Nagar</option>
+                    <option value="Kothrud">Kothrud</option>
+                    <option value="Hadapsar">Hadapsar</option>
+                    <option value="Deccan">Deccan</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>तारीख आणि वेळ</label>
+                <input type="datetime-local" id="timeSlot" required>
+            </div>
+
+            <div class="form-group">
+                <label>कामाचा फोटो अपलोड करा</label>
+                <input type="file" id="jobPhoto" accept="image/*" required>
+            </div>
+
+            <div class="form-group">
+                <label>तुम्ही देणारे पेमेंट (₹ मध्ये)</label>
+                <input type="number" id="price" placeholder="उदा. 300" min="50" required>
+            </div>
+
+            <button type="submit" class="btn-submit">बुकिंग सबमिट करा</button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+    // Page load jhalyavar check kara order already placed ahe ka
+    window.onload = function() {
+        renderActiveOrder();
+    };
+
+    function renderActiveOrder() {
+        const savedOrder = localStorage.getItem('gharkam_active_order');
+        if (savedOrder) {
+            const order = JSON.parse(savedOrder);
+            document.getElementById('dispService').innerText = order.serviceType;
+            document.getElementById('dispArea').innerText = order.area;
+            document.getElementById('dispTime').innerText = order.timeSlot;
+            document.getElementById('dispPrice').innerText = order.price;
+            document.getElementById('dispImage').src = order.photo;
+            
+            document.getElementById('activeOrderCard').style.display = 'block';
+            document.getElementById('bookingFormCard').style.display = 'none';
+        } else {
+            document.getElementById('activeOrderCard').style.display = 'none';
+            document.getElementById('bookingFormCard').style.display = 'block';
+        }
+    }
+
+    function submitBooking(e) {
+        e.preventDefault();
+
+        const serviceType = document.getElementById('serviceType').value;
+        const area = document.getElementById('area').value;
+        const timeSlot = document.getElementById('timeSlot').value;
+        const price = document.getElementById('price').value;
+        const photoInput = document.getElementById('jobPhoto');
+
+        let sessionUser = JSON.parse(localStorage.getItem('current_user_session')) || {};
+        let customerPhone = sessionUser.mobile || "9876543210";
+
+        const saveAndDisplay = (photoBase64) => {
+            const bookingData = {
+                serviceType,
+                area,
+                timeSlot,
+                price,
+                photo: photoBase64,
+                customerPhone,
+                status: 'pending'
+            };
+
+            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
+            renderActiveOrder();
+        };
+
+        if (photoInput.files && photoInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                saveAndDisplay(evt.target.result);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            saveAndDisplay("https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500");
+        }
+    }
+
+    function cancelBooking() {
+        if (confirm("तुम्हाला ही बुकिंग नक्की कॅन्सल करायची आहे का?")) {
+            localStorage.removeItem('gharkam_active_order');
+            renderActiveOrder();
+        }
+    }
+</script>
+
+</body>
+</html>

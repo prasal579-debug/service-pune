@@ -10,7 +10,6 @@
         .header { background: #fff; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto 20px auto; }
         .duty-status { display: flex; align-items: center; gap: 10px; }
         
-        /* Duty Toggle Switch */
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -22,7 +21,6 @@
         .status-banner { background: #e9ecef; color: #6c757d; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 20px; }
         .status-banner.online { background: #d4edda; color: #155724; }
 
-        /* Order Card */
         .order-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; display: none; }
         .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
         .service-badge { background: #007bff; color: white; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
@@ -58,18 +56,17 @@
         तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.
     </div>
 
-    <!-- आलेली ऑर्डर (Sample Order Card) -->
+    <!-- Dynamic Order Card -->
     <div class="order-card" id="orderCard">
         <div class="order-header">
-            <span class="service-badge">Plumbing (नळ दुरुस्ती)</span>
-            <span style="font-weight: bold; color: #28a745;">ऑफर: ₹350</span>
+            <span class="service-badge" id="ordService">Plumbing</span>
+            <span style="font-weight: bold; color: #28a745;">ऑफर: ₹<span id="ordPrice">0</span></span>
         </div>
         <div class="order-details">
-            <p><strong>लोकेशन:</strong> Katraj (Near Bharati Vidyapeeth)</p>
-            <p><strong>वेळ:</strong> आज, संध्याकाळी 5:00 वाजता</p>
+            <p><strong>लोकेशन:</strong> <span id="ordArea">Katraj</span></p>
+            <p><strong>वेळ:</strong> <span id="ordTime">--</span></p>
             <p><strong>कामाचा फोटो:</strong></p>
-            <!-- सॅम्पल फोटो -->
-            <img src="https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500" alt="Work Photo" class="order-img">
+            <img id="ordImage" src="" alt="Work Photo" class="order-img">
         </div>
         <div class="action-btns" id="actionBtns">
             <button class="btn btn-accept" onclick="acceptOrder()">Accept Order</button>
@@ -77,7 +74,7 @@
         </div>
         <div id="acceptAlert">
             ऑर्डर यशस्वीरित्या कन्फर्म झाली आहे! कस्टमरला मेसेज पाठवला गेला आहे.<br>
-            <strong>कस्टमर फोन: 9876543210</strong>
+            <strong>कस्टमर फोन: <span id="ordPhone">9876543210</span></strong>
         </div>
     </div>
 </div>
@@ -95,16 +92,36 @@
             statusBanner.innerText = "तुम्ही सध्या ONLINE आहात. नवीन ऑर्डर्स शोधत आहे...";
             statusBanner.classList.add('online');
             
-            // २ सेकंदानंतर सॅम्पल ऑर्डर दाखवा (Simulate Notification)
-            setTimeout(() => {
-                orderCard.style.display = 'block';
-            }, 1500);
+            checkForOrders();
         } else {
             dutyLabel.innerText = "Duty OFF";
             dutyLabel.style.color = "#777";
             statusBanner.innerText = "तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.";
             statusBanner.classList.remove('online');
             orderCard.style.display = 'none';
+        }
+    }
+
+    function checkForOrders() {
+        const savedOrder = localStorage.getItem('gharkam_active_order');
+        const orderCard = document.getElementById('orderCard');
+
+        if (savedOrder) {
+            const orderData = JSON.parse(savedOrder);
+            
+            document.getElementById('ordService').innerText = orderData.serviceType;
+            document.getElementById('ordPrice').innerText = orderData.price;
+            document.getElementById('ordArea').innerText = orderData.area;
+            document.getElementById('ordTime').innerText = orderData.timeSlot;
+            document.getElementById('ordImage').src = orderData.photo;
+            document.getElementById('ordPhone').innerText = orderData.customerPhone || "9876543210";
+            document.getElementById('workerAreaName').innerText = orderData.area;
+
+            setTimeout(() => {
+                orderCard.style.display = 'block';
+            }, 1000);
+        } else {
+            document.getElementById('statusBanner').innerText = "तुम्ही सध्या ONLINE आहात. सध्या नवीन कोणतीही ऑर्डर उपलब्ध नाही.";
         }
     }
 
@@ -115,6 +132,7 @@
 
     function rejectOrder() {
         document.getElementById('orderCard').style.display = 'none';
+        localStorage.removeItem('gharkam_active_order');
         alert('ऑर्डर रिजेक्ट केली आहे.');
     }
 </script>

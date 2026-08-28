@@ -22,11 +22,11 @@
         #statusMessage { display: none; margin-top: 15px; padding: 12px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; text-align: center; font-weight: bold; }
 
         /* Order Details Card Below Form */
-        .order-card { display: none; background: #fff; border-top: 4px solid #28a745; margin-top: 10px; }
+        .order-card { display: none; background: #fff; border-top: 4px solid #28a745; margin-top: 20px; }
         .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 12px; }
         .status-badge { background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         
-        .order-info p { margin: 6px 0; font-size: 14px; color: #444; }
+        .order-info p { margin: 8px 0; font-size: 14px; color: #444; }
         .order-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin: 10px 0; border: 1px solid #ddd; }
         
         .btn-delete { width: 100%; padding: 10px; background: #dc3545; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 12px; font-size: 14px; }
@@ -41,7 +41,7 @@
     <div class="card">
         <h3>नवीन बुकिंग करा</h3>
         
-        <form id="bookingForm" onsubmit="submitBooking(event)">
+        <form id="bookingForm">
             <div class="form-group">
                 <label>कामाचा प्रकार निवडा</label>
                 <select id="serviceType" required>
@@ -73,7 +73,7 @@
 
             <div class="form-group">
                 <label>कामाचा फोटो अपलोड करा</label>
-                <input type="file" id="jobPhoto" accept="image/*" required>
+                <input type="file" id="jobPhoto" accept="image/*">
             </div>
 
             <div class="form-group">
@@ -111,10 +111,53 @@
 </div>
 
 <script>
-    // Page load झाल्यावर जुनी ऑर्डर असल्यास खाली दाखवा
-    window.onload = function() {
+    document.addEventListener('DOMContentLoaded', function() {
         checkAndShowOrder();
-    };
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const serviceType = document.getElementById('serviceType').value;
+            const area = document.getElementById('area').value;
+            const timeSlot = document.getElementById('timeSlot').value;
+            const price = document.getElementById('price').value;
+            const photoInput = document.getElementById('jobPhoto');
+
+            const defaultImg = "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500";
+
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    saveOrder(serviceType, area, timeSlot, price, evt.target.result);
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                saveOrder(serviceType, area, timeSlot, price, defaultImg);
+            }
+        });
+    });
+
+    function saveOrder(serviceType, area, timeSlot, price, photo) {
+        const bookingData = {
+            serviceType,
+            area,
+            timeSlot,
+            price,
+            photo,
+            status: 'pending'
+        };
+
+        try {
+            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
+        } catch(err) {
+            // Photo खूप मोठा असेल तर fallback image वावरा
+            bookingData.photo = "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500";
+            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
+        }
+
+        document.getElementById('bookingForm').reset();
+        checkAndShowOrder();
+    }
 
     function checkAndShowOrder() {
         const savedOrder = localStorage.getItem('gharkam_active_order');
@@ -131,45 +174,6 @@
         } else {
             document.getElementById('activeOrderCard').style.display = 'none';
             document.getElementById('statusMessage').style.display = 'none';
-        }
-    }
-
-    function submitBooking(e) {
-        e.preventDefault();
-
-        const serviceType = document.getElementById('serviceType').value;
-        const area = document.getElementById('area').value;
-        const timeSlot = document.getElementById('timeSlot').value;
-        const price = document.getElementById('price').value;
-        const photoInput = document.getElementById('jobPhoto');
-
-        let sessionUser = JSON.parse(localStorage.getItem('current_user_session')) || {};
-        let customerPhone = sessionUser.mobile || "9876543210";
-
-        const saveAndRender = (photoBase64) => {
-            const bookingData = {
-                serviceType,
-                area,
-                timeSlot,
-                price,
-                photo: photoBase64,
-                customerPhone,
-                status: 'pending'
-            };
-
-            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
-            checkAndShowOrder();
-            document.getElementById('bookingForm').reset();
-        };
-
-        if (photoInput.files && photoInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                saveAndRender(evt.target.result);
-            };
-            reader.readAsDataURL(photoInput.files[0]);
-        } else {
-            saveAndRender("https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500");
         }
     }
 

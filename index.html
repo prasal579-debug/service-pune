@@ -3,90 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pune Home Services - Login</title>
+    <title>Gharkam.com - Secure Login & Signup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("PfAaODZ_GPiBPHvOi"); 
+        })();
+    </script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { margin-bottom: 20px; color: #333; }
-        .role-selector { display: flex; justify-content: space-around; margin-bottom: 20px; }
-        .role-btn { flex: 1; padding: 10px; margin: 0 5px; border: 1px solid #007bff; background: #fff; color: #007bff; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .role-btn.active { background: #007bff; color: #fff; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #555; }
-        .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        .submit-btn { width: 100%; padding: 12px; background: #28a745; border: none; color: white; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .submit-btn:hover { background: #218838; }
+        body { font-family: 'Poppins', sans-serif; }
+        .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
-<body>
+<body class="hero-bg min-h-screen flex flex-col justify-between text-gray-800">
 
-<div class="container">
-    <h2>पुणे होम सर्व्हिसेस</h2>
-    <p style="margin-bottom: 15px; color: #666;">लॉगिन प्रकार निवडा</p>
-    
-    <div class="role-selector">
-        <button class="role-btn active" id="custBtn" onclick="selectRole('customer')">Customer</button>
-        <button class="role-btn" id="workBtn" onclick="selectRole('worker')">Worker</button>
-    </div>
-
-    <form id="loginForm" onsubmit="handleLogin(event)">
-        <input type="hidden" id="userRole" value="customer">
-        
-        <div class="input-group">
-            <label>मोबाईल नंबर / ई-मेल</label>
-            <input type="text" id="username" placeholder="उदा. 9876543210" required>
+    <!-- Header -->
+    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-white p-2 rounded-full shadow-lg font-bold text-blue-600 text-xl">🏠 GK</div>
+            <div>
+                <h1 class="text-white text-2xl font-bold">GHARKAM<span class="text-yellow-400">.com</span></h1>
+                <p class="text-xs text-blue-200">Pune City Services</p>
+            </div>
         </div>
-        
-        <div class="input-group">
-            <label>पासवर्ड</label>
-            <input type="password" id="password" placeholder="******" required>
+        <div>
+            <span id="location-status" class="text-xs bg-yellow-400 text-gray-900 px-3 py-1.5 rounded-full font-semibold shadow-inner">📍 Pune Verified</span>
         </div>
+    </header>
 
-        <div class="input-group" id="areaGroup" style="display: none;">
-            <label>तुमचा काम करण्याचा एरिया (Worker Only)</label>
-            <select id="workerArea">
-                <option value="Swargate">Swargate</option>
-                <option value="Katraj">Katraj</option>
-                <option value="Shivaji Nagar">Shivaji Nagar</option>
-                <option value="Kothrud">Kothrud</option>
-                <option value="Hadapsar">Hadapsar</option>
-                <option value="Deccan">Deccan</option>
-            </select>
+    <!-- Main Auth Card -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10">
+        <div class="max-w-md w-full glass-card p-8">
+            
+            <!-- Role Selection -->
+            <div class="flex mb-6 bg-gray-200 p-1 rounded-xl">
+                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
+                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
+            </div>
+
+            <div class="text-center mb-6">
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Signup</h2>
+                <p id="formSub" class="text-xs text-gray-500 mt-1">Create account using Email OTP</p>
+            </div>
+
+            <!-- Status Message Box -->
+            <div id="statusMsg" class="hidden mb-4 p-3 rounded-xl text-center text-xs font-semibold"></div>
+
+            <form id="authForm" onsubmit="handleSendOTP(event)" class="space-y-4">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Mobile Number:</label>
+                    <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email ID:</label>
+                    <input type="email" id="email" placeholder="E.g., name@gmail.com" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div id="workTypeContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Work Expertise:</label>
+                    <select id="workType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm bg-white">
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Painting">Painting</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-300">
+                    Send OTP
+                </button>
+
+                <!-- OTP Input Area -->
+                <div id="otpContainer" class="hidden space-y-3 pt-3 border-t">
+                    <label class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
+                        <button type="button" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Login</button>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs pt-1">
+                        <button type="button" onclick="resendOTP()" id="resendBtn" class="text-blue-600 hover:underline font-semibold">🔄 Resend OTP</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="text-center mt-6">
+                <p id="toggleText" class="text-xs text-gray-600">
+                    Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>
+                </p>
+            </div>
+
         </div>
+    </main>
 
-        <button type="submit" class="submit-btn">लॉगिन करा</button>
-    </form>
-</div>
+    <footer class="text-center py-4 text-blue-200 text-xs bg-black/20">
+        &copy; 2026 Gharkam.com | Pune City
+    </footer>
 
-<script>
-    function selectRole(role) {
-        document.getElementById('userRole').value = role;
-        const custBtn = document.getElementById('custBtn');
-        const workBtn = document.getElementById('workBtn');
-        const areaGroup = document.getElementById('areaGroup');
+    <script>
+        let currentRole = 'customer'; 
+        let isSignupMode = true;      
+        let generatedOTP = null;
+        let pendingUserData = null;
 
-        if (role === 'customer') {
-            custBtn.classList.add('active');
-            workBtn.classList.remove('active');
-            areaGroup.style.display = 'none';
-        } else {
-            workBtn.classList.add('active');
-            custBtn.classList.remove('active');
-            areaGroup.style.display = 'block';
+        function setRole(role) {
+            currentRole = role;
+            const tabC = document.getElementById('tabCustomer');
+            const tabW = document.getElementById('tabWorker');
+
+            if (role === 'customer') {
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition";
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            } else {
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-900 transition";
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            }
+            updateFormUI();
         }
-    }
 
-    function handleLogin(e) {
-        e.preventDefault();
-        const role = document.getElementById('userRole').value;
-        if (role === 'customer') {
-            window.location.href = 'customer-booking.html';
-        } else {
-            window.location.href = 'worker-dashboard.html';
+        function toggleMode() {
+            isSignupMode = !isSignupMode;
+            showStatus('', 'hidden');
+            document.getElementById('otpContainer').classList.add('hidden');
+            document.getElementById('submitBtn').classList.remove('hidden');
+            updateFormUI();
         }
-    }
-</script>
 
+        function updateFormUI() {
+            const title = document.getElementById('formTitle');
+            const sub = document.getElementById('formSub');
+            const btn = document.getElementById('submitBtn');
+            const toggleTxt = document.getElementById('toggleText');
+            const workTypeContainer = document.getElementById('workTypeContainer');
+
+            let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
+
+            if (isSignupMode && currentRole === 'worker') {
+                workTypeContainer.classList.remove('hidden');
+            } else {
+                workTypeContainer.classList.add('hidden');
+            }
+
+            if (isSignupMode) {
+                title.innerText = roleName + " Signup";
+                sub.innerText = "Create account using Email OTP";
+                btn.innerText = "Send OTP";
+                btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
+            } else {
+                title.innerText = roleName + " Sign In";
+                sub.innerText = "Login instantly via Email OTP";
+                btn.innerText = "Send OTP to Login";
+                btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
+            }
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            if (type === 'hidden') {
+                el.classList.add('hidden');
+                return;
+            }
+            el.innerText = msg;
+            el.className = "mb-4 p-3 rounded-xl text-center text-xs font-semibold " + 
+                (type === 'success' ? "bg-green-100 border border-green-400 text-green-700" : 
+                 type === 'error' ? "bg-red-100 border border-red-400 text-red-700" : "bg-blue-100 border border-blue-400 text-blue-700");
+            el.classList.remove('hidden');
+        }
+
+        function handleSendOTP(event) {
+            event.preventDefault();
+
+            let mobile = document.getElementById('mobile').value;
+            let email = document.getElementById('email').value;
+
+            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
+
+            if (isSignupMode && savedUserJson) {
+                showStatus("Ha mobile number registered ahe! Direct Sign In kara.", "error");
+                return;
+            }
+
+            if (!isSignupMode && !savedUserJson) {
+                showStatus("Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
+                return;
+            }
+
+            let selectedWorkType = (currentRole === 'worker') ? document.getElementById('workType').value : null;
+
+            pendingUserData = { 
+                mobile, email, role: currentRole, balance: 50, 
+                workType: selectedWorkType 
+            };
+
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            sendEmailOTP(email, generatedOTP);
+        }
+
+        function sendEmailOTP(email, otp) {
+            showStatus("⏳ Sending OTP to " + email + "...", "info");
+
+            const serviceID = 'service_lst67g7';
+            const templateID = 'template_ope5xzi';
+
+            const templateParams = {
+                to_email: email,
+                email: email,
+                user_email: email,
+                otp_code: otp,
+                message: "Your Gharkam.com OTP Code is: " + otp
+            };
+
+            emailjs.send(serviceID, templateID, templateParams)
+                .then(() => {
+                    showStatus("📩 OTP Pathavla ahe! Krupaya Inbox ki Spam folder check kara.", "success");
+                    document.getElementById('otpContainer').classList.remove('hidden');
+                    document.getElementById('submitBtn').classList.add('hidden');
+                })
+                .catch((err) => {
+                    console.error("EmailJS Error:", err);
+                    showStatus("❌ Email send fails. Re-check EmailJS Template.", "error");
+                });
+        }
+
+        function resendOTP() {
+            let email = document.getElementById('email').value;
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            sendEmailOTP(email, generatedOTP);
+        }
+
+        function verifyOTPAndRegister(event) {
+            if(event) event.preventDefault();
+            
+            let userEnteredOTP = document.getElementById('otpInput').value.trim();
+
+            if (userEnteredOTP === generatedOTP) {
+                if (isSignupMode) {
+                    localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                }
+                
+                let sessionUser = JSON.parse(localStorage.getItem('gharkam_user_' + pendingUserData.mobile)) || pendingUserData;
+                localStorage.setItem('current_user_session', JSON.stringify(sessionUser));
+
+                showStatus("🎉 Verification Successful! Redirecting...", "success");
+
+                // Relative Navigation sathi exact relative path
+                setTimeout(() => {
+                    if (currentRole === 'customer') {
+                        window.location.href = "./customer.html";
+                    } else {
+                        window.location.href = "./worker.html";
+                    }
+                }, 800);
+            } else {
+                showStatus("❌ चुकीचा OTP! Correct code taka.", "error");
+            }
+        }
+    </script>
 </body>
 </html>

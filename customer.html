@@ -3,346 +3,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gharkam.com - Secure Login & Signup</title>
+    <title>Gharkam - Customer Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("PfAaODZ_GPiBPHvOi"); 
-        })();
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyD7Y-2un6pfAY8rafRsAzMre-OvNBAkosU",
+        authDomain: "gharkam-6c879.firebaseapp.com",
+        databaseURL: "https://gharkam-6c879-default-rtdb.firebaseio.com",
+        projectId: "gharkam-6c879",
+        storageBucket: "gharkam-6c879.firebasestorage.app",
+        messagingSenderId: "706729205935",
+        appId: "1:706729205935:web:598569d60ad414765e345a"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+      const storage = firebase.storage();
     </script>
-    <style>
-        body { font-family: 'Poppins', sans-serif; }
-        .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-    </style>
 </head>
-<body class="hero-bg min-h-screen flex flex-col justify-between text-gray-800">
+<body class="bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-900 min-h-screen p-4 md:p-8 flex items-center justify-center font-sans">
 
-    <!-- Header -->
-    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div class="flex items-center space-x-3">
-            <div class="bg-white p-2 rounded-full shadow-lg font-bold text-blue-600 text-xl">🏠 GK</div>
-            <div>
-                <h1 class="text-white text-2xl font-bold">GHARKAM<span class="text-yellow-400">.com</span></h1>
-                <p class="text-xs text-blue-200">Pune City Services</p>
+    <div class="w-full max-w-6xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+        
+        <header class="bg-blue-600 px-6 py-4 flex items-center justify-between shadow-md">
+            <div class="flex items-center gap-2 text-2xl font-black text-white">
+                <span class="bg-white text-blue-600 p-2 rounded-xl text-lg flex items-center justify-center shadow-sm">🏠 GK</span>
+                <span>GHARKAM<span class="text-blue-200">.com</span></span>
             </div>
-        </div>
-        <div>
-            <span id="location-status" class="text-xs bg-yellow-400 text-gray-900 px-3 py-1.5 rounded-full font-semibold shadow-inner">📍 Pune Verified</span>
-        </div>
-    </header>
+            <button onclick="logout()" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </header>
 
-    <!-- Main Auth Card -->
-    <main class="flex-grow flex items-center justify-center px-4 py-10">
-        <div class="max-w-md w-full glass-card p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
             
-            <!-- Role Selection -->
-            <div class="flex mb-6 bg-gray-200 p-1 rounded-xl" id="roleContainer">
-                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
-                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
+            <div class="lg:col-span-7 p-6 md:p-8 bg-white border-b lg:border-b-0 border-slate-200">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-blue-600"></i> Book Your Appointment
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Fill out the form to get the services of trusted workers in Pune.</p>
+                </div>
+
+                <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">SELECT SERVICE</label>
+                        <select id="serviceSelect" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                            <option value="Electrician">⚡ Electrician</option>
+                            <option value="Plumber">🪠 Plumber</option>
+                            <option value="Cleaner">🧹 Cleaning Service</option>
+                            <option value="Home Repair">🛠️ Home Repair</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">FULL NAME</label>
+                            <input type="text" id="customerName" placeholder="Your full name" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">MOBILE NUMBER</label>
+                            <input type="tel" id="customerMobile" pattern="[0-9]{10}" placeholder="mobile number" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">SELECT AREA</label>
+                        <select id="areaSelect" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                            <option value="Swargate">Swargate</option>
+                            <option value="Kothrud">Kothrud</option>
+                            <option value="Katraj">Katraj</option>
+                            <option value="Shivajinagar">Shivajinagar</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">FULL ADDRESS</label>
+                        <textarea id="customerAddress" rows="3" placeholder="House number, society, street or landmark..." required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">YOUR ESTIMATED BUDGET</label>
+                        <select id="budgetSelect" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                            <option value="₹500">₹500 (Standard Charge)</option>
+                            <option value="₹500 - ₹1,000">₹500 - ₹1,000</option>
+                            <option value="₹1,000 - ₹3,000">₹1,000 - ₹3,000</option>
+                            <option value="₹3,000 - ₹5,000">₹3,000 - ₹5,000</option>
+                            <option value="₹5,000+">₹5,000+</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">DATE</label>
+                            <input type="date" id="bookingDate" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">TIME</label>
+                            <input type="time" id="bookingTime" required class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">PHOTO (OPTIONAL)</label>
+                        <input type="file" id="jobPhoto" accept="image/*" class="w-full text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-2 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mt-4">
+                        <i class="fa-solid fa-paper-plane"></i> Book Appointment Now
+                    </button>
+                </form>
             </div>
 
-            <div class="text-center mb-6">
-                <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Sign In</h2>
-                <p id="formSub" class="text-xs text-gray-500 mt-1">Enter Mobile & Password to Sign In</p>
-            </div>
-
-            <!-- Status Message Box -->
-            <div id="statusMsg" class="hidden mb-4 p-3 rounded-xl text-center text-xs font-semibold"></div>
-
-            <!-- Main Auth Form -->
-            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                
+            <div class="lg:col-span-5 bg-slate-50 p-6 md:p-8 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col justify-between">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Mobile Number:</label>
-                    <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                </div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-rotate text-blue-600"></i> Live Booking Status
+                        </h3>
+                    </div>
 
-                <div id="emailContainer" class="hidden">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email ID:</label>
-                    <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                            <span class="font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                                📦 Live Booking Status
+                            </span>
+                            <span id="statusBadge" class="bg-gray-100 text-gray-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                                <span id="statusIcon">⚪</span> <span id="statusBadgeText">Not Booked Yet</span>
+                            </span>
+                        </div>
 
-                <div id="passwordContainer">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password:</label>
-                    <input type="password" id="password" placeholder="••••••••" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                </div>
+                        <div class="text-xs space-y-1.5 text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                            <p><strong>Service:</strong> <span id="statusService">Not Booked Yet</span></p>
+                            <p><strong>Budget:</strong> <span id="statusBudget" class="text-emerald-600 font-bold">-</span></p>
+                            <p><strong>Assigned Worker Mobile:</strong> <span id="statusWorker" class="text-blue-600 font-medium">Finding Worker...</span></p>
+                            <p><strong>Address:</strong> <span id="statusAddress">-</span></p>
+                        </div>
 
-                <div id="workTypeContainer" class="hidden">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Work Expertise:</label>
-                    <select id="workType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm bg-white">
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Electrician">Electrician</option>
-                        <option value="Plumbing">Plumbing</option>
-                        <option value="Painting">Painting</option>
-                    </select>
-                </div>
+                        <div class="space-y-4 pt-2">
+                            <div class="flex items-start gap-3">
+                                <div id="step1Dot" class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Order Requested</h5>
+                                    <p class="text-[11px] text-slate-400">Kamachi request successfully pathvali aahe.</p>
+                                </div>
+                            </div>
 
-                <div id="forgotPassLink" class="text-right text-xs">
-                    <a href="#" onclick="openForgotPasswordMode()" class="text-blue-600 font-semibold hover:underline">Forgot Password?</a>
-                </div>
+                            <div class="flex items-start gap-3">
+                                <div id="step2Dot" class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Worker Accepted</h5>
+                                    <p class="text-[11px] text-slate-400">The worker has accepted the order.</p>
+                                </div>
+                            </div>
 
-                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-300">
-                    Sign In Direct
-                </button>
-            </form>
+                            <div class="flex items-start gap-3">
+                                <div id="step3Dot" class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Worker On The Way</h5>
+                                    <p class="text-[11px] text-slate-400">Worker is coming to your location.</p>
+                                </div>
+                            </div>
 
-            <!-- Forgot Password Modal/Section -->
-            <div id="forgotPassContainer" class="hidden space-y-4 pt-2 border-t">
-                <div id="otpStep">
-                    <label class="block text-xs font-semibold text-blue-600 mb-1">Enter OTP sent to your Registered Email:</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="forgotOtpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
-                        <button type="button" onclick="verifyForgotOTP()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify OTP</button>
+                            <div class="flex items-start gap-3">
+                                <div id="step4Dot" class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Work Completed</h5>
+                                    <p class="text-[11px] text-slate-400">Kam yashasvirita purana zale aahe.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cancelContainer" class="pt-3 border-t border-slate-100 hidden">
+                            <button id="cancelOrderBtn" onclick="cancelCurrentOrder()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-xs transition border border-red-200 flex items-center justify-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-xmark"></i> Cancel Order
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div id="resetPasswordStep" class="hidden space-y-3">
-                    <label class="block text-xs font-semibold text-gray-600">Enter New Password:</label>
-                    <input type="password" id="newPassword" placeholder="New Password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                    <button type="button" onclick="resetNewPassword()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg hover:bg-blue-700 transition">Save & Login</button>
+                <div class="mt-8 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-headset text-blue-600"></i> Customer Care Support
+                    </h4>
+                    <p class="text-xs text-slate-500 mb-3">If you need any assistance, please contact our support team directly.</p>
+                    <a href="tel:7875160724" class="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl transition">
+                        <i class="fa-solid fa-phone text-blue-600"></i> Call Support
+                    </a>
                 </div>
             </div>
 
-            <div class="text-center mt-6">
-                <p id="toggleText" class="text-xs text-gray-600">
-                    Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>
-                </p>
-            </div>
-
         </div>
-    </main>
-
-    <footer class="text-center py-4 text-blue-200 text-xs bg-black/20">
-        &copy; 2026 Gharkam.com | Pune City
-    </footer>
+    </div>
 
     <script>
-        let currentRole = 'customer'; 
-        let isSignupMode = false; // Default Direct Sign In Mode      
-        let generatedOTP = null;
-        let foundUserForReset = null;
+        let currentOrderId = null;
 
-        function setRole(role) {
-            currentRole = role;
-            const tabC = document.getElementById('tabCustomer');
-            const tabW = document.getElementById('tabWorker');
+        // Auto-fill Session details & set date on Page Load
+        window.onload = function() {
+            document.getElementById('bookingDate').valueAsDate = new Date();
 
-            if (role === 'customer') {
-                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition";
-                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
-            } else {
-                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-900 transition";
-                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
-            }
-            updateFormUI();
-        }
-
-        function toggleMode() {
-            isSignupMode = !isSignupMode;
-            resetForms();
-            updateFormUI();
-        }
-
-        function resetForms() {
-            showStatus('', 'hidden');
-            document.getElementById('forgotPassContainer').classList.add('hidden');
-            document.getElementById('submitBtn').classList.remove('hidden');
-            document.getElementById('forgotPassLink').classList.remove('hidden');
-        }
-
-        function updateFormUI() {
-            const title = document.getElementById('formTitle');
-            const sub = document.getElementById('formSub');
-            const btn = document.getElementById('submitBtn');
-            const toggleTxt = document.getElementById('toggleText');
-            const workTypeContainer = document.getElementById('workTypeContainer');
-            const emailContainer = document.getElementById('emailContainer');
-            const passwordContainer = document.getElementById('passwordContainer');
-
-            let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
-
-            if (isSignupMode) {
-                title.innerText = roleName + " Signup";
-                sub.innerText = "Create account with Mobile, Email & Password";
-                btn.innerText = "Sign Up";
-                emailContainer.classList.remove('hidden');
-                passwordContainer.classList.remove('hidden');
-                document.getElementById('email').required = true;
-                document.getElementById('password').required = true;
+            let activeSession = JSON.parse(localStorage.getItem('current_user_session'));
+            if(activeSession && activeSession.mobile) {
+                document.getElementById('customerMobile').value = activeSession.mobile;
+                if(activeSession.name) document.getElementById('customerName').value = activeSession.name;
                 
-                if (currentRole === 'worker') {
-                    workTypeContainer.classList.remove('hidden');
+                // Fetch Last Active Order automatically
+                fetchLatestOrder(activeSession.mobile);
+            }
+        };
+
+        // Fetch User's latest active order on load
+        function fetchLatestOrder(mobile) {
+            database.ref("orders").orderByChild("customerMobile").equalTo(mobile).limitToLast(1).on("value", (snapshot) => {
+                if(snapshot.exists()) {
+                    snapshot.forEach(childSnap => {
+                        currentOrderId = childSnap.key;
+                        const data = childSnap.val();
+                        updateOrderUI(data);
+                        trackLiveStatus(currentOrderId);
+                    });
+                }
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Booking in progress...';
+
+            const service = document.getElementById('serviceSelect').value;
+            const name = document.getElementById('customerName').value;
+            const mobile = document.getElementById('customerMobile').value;
+            const area = document.getElementById('areaSelect').value;
+            const address = document.getElementById('customerAddress').value;
+            const budget = document.getElementById('budgetSelect').value;
+            const date = document.getElementById('bookingDate').value;
+            const time = document.getElementById('bookingTime').value;
+            const photoInput = document.getElementById('jobPhoto');
+
+            let photoUrl = "";
+
+            try {
+                if (photoInput.files && photoInput.files[0]) {
+                    try {
+                        const file = photoInput.files[0];
+                        const storageRef = storage.ref('order_photos/' + Date.now() + '_' + file.name);
+                        const snapshot = await storageRef.put(file);
+                        photoUrl = await snapshot.ref.getDownloadURL();
+                    } catch (storageError) {
+                        console.warn("Photo upload skipped/failed:", storageError);
+                    }
+                }
+
+                const newOrderRef = database.ref("orders").push();
+                currentOrderId = newOrderRef.key;
+
+                const orderData = {
+                    service: service,
+                    customerName: name,
+                    customerMobile: mobile,
+                    area: area,
+                    address: address,
+                    budget: budget,
+                    date: date,
+                    time: time,
+                    photoUrl: photoUrl,
+                    status: "Pending",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                await newOrderRef.set(orderData);
+                alert("तुमची अपॉइंटमेंट यशस्वीरीत्या बुक झाली आहे!");
+                
+                updateOrderUI(orderData);
+                trackLiveStatus(currentOrderId);
+
+            } catch (err) {
+                alert("बुकिंग करताना अडचण आली: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Book Appointment Now';
+            }
+        }
+
+        function trackLiveStatus(orderId) {
+            database.ref("orders/" + orderId).on("value", (snapshot) => {
+                const data = snapshot.val();
+                if(data) updateOrderUI(data);
+            });
+        }
+
+        function updateOrderUI(data) {
+            document.getElementById('statusService').innerText = data.service || "N/A";
+            document.getElementById('statusBudget').innerText = data.budget || "-";
+            document.getElementById('statusAddress').innerText = data.address || "-";
+            document.getElementById('statusWorker').innerText = data.workerMobile || "Finding Worker...";
+
+            const badge = document.getElementById('statusBadge');
+            const badgeText = document.getElementById('statusBadgeText');
+            const icon = document.getElementById('statusIcon');
+            const cancelBtn = document.getElementById('cancelContainer');
+
+            // Reset Steps Visuals
+            document.getElementById('step1Dot').className = "w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+            document.getElementById('step2Dot').className = "w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+            document.getElementById('step3Dot').className = "w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+            document.getElementById('step4Dot').className = "w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+
+            if (data.status === 'Pending') {
+                badge.className = "bg-amber-100 text-amber-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                icon.innerText = "⏳";
+                badgeText.innerText = "Finding Worker";
+                document.getElementById('step1Dot').className = "w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                cancelBtn.classList.remove('hidden');
+
+            } else if (data.status === 'Accepted') {
+                badge.className = "bg-blue-100 text-blue-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                icon.innerText = "✅";
+                badgeText.innerText = "Worker Accepted";
+                document.getElementById('step1Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step2Dot').className = "w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                cancelBtn.classList.remove('hidden');
+
+            } else if (data.status === 'On The Way') {
+                badge.className = "bg-purple-100 text-purple-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                icon.innerText = "🛵";
+                badgeText.innerText = "Worker On The Way";
+                document.getElementById('step1Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step2Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step3Dot').className = "w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                cancelBtn.classList.add('hidden'); // Cannot cancel once worker is on the way
+
+            } else if (data.status === 'Completed') {
+                badge.className = "bg-emerald-100 text-emerald-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                icon.innerText = "🎉";
+                badgeText.innerText = "Work Completed";
+                document.getElementById('step1Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step2Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step3Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                document.getElementById('step4Dot').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+                cancelBtn.classList.add('hidden');
+
+            } else if (data.status === 'Cancelled') {
+                badge.className = "bg-red-100 text-red-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1";
+                icon.innerText = "❌";
+                badgeText.innerText = "Order Cancelled";
+                cancelBtn.classList.add('hidden');
+            }
+        }
+
+        function cancelCurrentOrder() {
+            if (!currentOrderId) {
+                alert("सध्या कोणतीही सक्रिय ऑर्डर उपलब्ध नाही!");
+                return;
+            }
+
+            database.ref("orders/" + currentOrderId).once("value", (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                if (data.status === 'On The Way') {
+                    alert("❌ ऑर्डर कॅन्सल करता येणार नाही! Worker निघाला आहे.");
+                } else if (data.status === 'Completed') {
+                    alert("❌ हे काम पूर्ण झाले आहे, त्यामुळे कॅन्सल करता येणार नाही.");
                 } else {
-                    workTypeContainer.classList.add('hidden');
+                    if (confirm("तुम्हाला नक्की ही ऑर्डर रद्द (Cancel) करायची आहे का?")) {
+                        database.ref("orders/" + currentOrderId).update({
+                            status: "Cancelled"
+                        }).then(() => {
+                            alert("तुमची ऑर्डर यशस्वीरीत्या रद्द (Cancelled) झाली आहे.");
+                        });
+                    }
                 }
-
-                document.getElementById('forgotPassLink').classList.add('hidden');
-                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
-            } else {
-                title.innerText = roleName + " Sign In";
-                sub.innerText = "Enter Mobile & Password to Sign In";
-                btn.innerText = "Sign In Direct";
-                emailContainer.classList.add('hidden');
-                passwordContainer.classList.remove('hidden');
-                workTypeContainer.classList.add('hidden');
-                document.getElementById('email').required = false;
-                document.getElementById('password').required = true;
-                document.getElementById('forgotPassLink').classList.remove('hidden');
-
-                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
-            }
-            
-            btn.className = currentRole === 'customer' 
-                ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" 
-                : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+            });
         }
 
-        function showStatus(msg, type) {
-            const el = document.getElementById('statusMsg');
-            if (type === 'hidden') {
-                el.classList.add('hidden');
-                return;
-            }
-            el.innerText = msg;
-            el.className = "mb-4 p-3 rounded-xl text-center text-xs font-semibold " + 
-                (type === 'success' ? "bg-green-100 border border-green-400 text-green-700" : 
-                 type === 'error' ? "bg-red-100 border border-red-400 text-red-700" : "bg-blue-100 border border-blue-400 text-blue-700");
-            el.classList.remove('hidden');
-        }
-
-        function handleAuthSubmit(event) {
-            event.preventDefault();
-
-            let mobile = document.getElementById('mobile').value;
-            let password = document.getElementById('password').value;
-            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
-
-            if (isSignupMode) {
-                if (savedUserJson) {
-                    showStatus("हा मोबाईल नंबर आधीच नोंदणीकृत आहे! डायरेक्ट लॉगिन करा.", "error");
-                    return;
-                }
-                let email = document.getElementById('email').value;
-                let selectedWorkType = (currentRole === 'worker') ? document.getElementById('workType').value : null;
-
-                let newUser = { mobile, email, password, role: currentRole, balance: 50, workType: selectedWorkType };
-                localStorage.setItem('gharkam_user_' + mobile, JSON.stringify(newUser));
-                localStorage.setItem('current_user_session', JSON.stringify(newUser));
-
-                showStatus("🎉 नोंदणी यशस्वी! रिडायरेक्ट होत आहे...", "success");
-                redirectUser();
-
-            } else {
-                if (!savedUserJson) {
-                    showStatus("❌ खाते सापडले नाही! कृपया आधी Sign Up करा.", "error");
-                    return;
-                }
-
-                let userData = JSON.parse(savedUserJson);
-
-                if (userData.password !== password) {
-                    showStatus("❌ चुकीचा Password! कृपया बरोबर पासवर्ड टाका.", "error");
-                    return;
-                }
-
-                userData.role = currentRole;
-                localStorage.setItem('current_user_session', JSON.stringify(userData));
-
-                showStatus("🎉 लॉगिन यशस्वी! रिडायरेक्ट होत आहे...", "success");
-                redirectUser();
-            }
-        }
-
-        /* --- Forgot Password Flow --- */
-        function openForgotPasswordMode() {
-            let mobile = document.getElementById('mobile').value;
-            if (!mobile || mobile.length !== 10) {
-                showStatus("कृपया आधी तुमचा 10-अंकी Mobile Number वर टाका!", "error");
-                return;
-            }
-
-            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
-            if (!savedUserJson) {
-                showStatus("या मोबाईल नंबरचे अकाउंट सापडले नाही!", "error");
-                return;
-            }
-
-            foundUserForReset = JSON.parse(savedUserJson);
-            
-            // Generate OTP & Send Email
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            showStatus("⏳ OTP शोधत आहे व " + foundUserForReset.email + " वर पाठवत आहे...", "info");
-
-            const serviceID = 'service_lst67g7';
-            const templateID = 'template_ope5xzi';
-
-            const templateParams = {
-                to_email: foundUserForReset.email,
-                email: foundUserForReset.email,
-                user_email: foundUserForReset.email,
-                otp_code: generatedOTP,
-                message: "Password Reset साठी तुमचा Gharkam.com OTP Code आहे: " + generatedOTP
-            };
-
-            emailjs.send(serviceID, templateID, templateParams)
-                .then(() => {
-                    showStatus("📩 OTP " + foundUserForReset.email + " वर पाठवला आहे!", "success");
-                    document.getElementById('forgotPassContainer').classList.remove('hidden');
-                    document.getElementById('submitBtn').classList.add('hidden');
-                    document.getElementById('forgotPassLink').classList.add('hidden');
-                })
-                .catch((err) => {
-                    console.error("EmailJS Error:", err);
-                    showStatus("❌ Email पाठवताना त्रुटी आली. EmailJS तपासा.", "error");
-                });
-        }
-
-        function verifyForgotOTP() {
-            let userEnteredOTP = document.getElementById('forgotOtpInput').value.trim();
-
-            if (userEnteredOTP === generatedOTP) {
-                showStatus("✅ OTP व्हेरिफाय झाला! नवीन पासवर्ड टाका.", "success");
-                document.getElementById('otpStep').classList.add('hidden');
-                document.getElementById('resetPasswordStep').classList.remove('hidden');
-            } else {
-                showStatus("❌ चुकीचा OTP! कृपया अचूक कोड टाका.", "error");
-            }
-        }
-
-        function resetNewPassword() {
-            let newPass = document.getElementById('newPassword').value;
-            if (!newPass) {
-                showStatus("कृपया नवीन पासवर्ड टाका!", "error");
-                return;
-            }
-
-            // Update user password in localstorage
-            foundUserForReset.password = newPass;
-            localStorage.setItem('gharkam_user_' + foundUserForReset.mobile, JSON.stringify(foundUserForReset));
-            localStorage.setItem('current_user_session', JSON.stringify(foundUserForReset));
-
-            showStatus("🎉 पासवर्ड यशस्वीरित्या बदलला! रिडायरेक्ट होत आहे...", "success");
-            redirectUser();
-        }
-
-        function redirectUser() {
-            setTimeout(() => {
-                if (currentRole === 'customer') {
-                    window.location.href = "./customer.html";
-                } else if (currentRole === 'worker') {
-                    window.location.href = "./worker.html";
-                }
-            }, 800);
+        function logout() {
+            localStorage.removeItem('current_user_session');
+            window.location.href = "./index.html";
         }
     </script>
 </body>

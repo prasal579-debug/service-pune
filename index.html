@@ -71,9 +71,26 @@
                     <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
 
+                <!-- Password Field with Eye Toggle -->
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Password:</label>
-                    <input type="password" id="password" placeholder="Enter Password" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <div class="relative">
+                        <input type="password" id="password" minlength="6" placeholder="Enter Password (min 6 chars)" required class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <button type="button" onclick="togglePasswordVisibility('password', 'eyeIcon1')" class="absolute right-3 top-3 text-gray-500 text-sm">
+                            <span id="eyeIcon1">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password (Only for Sign Up) -->
+                <div id="confirmPasswordContainer">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Confirm Password:</label>
+                    <div class="relative">
+                        <input type="password" id="confirmPassword" minlength="6" placeholder="Re-enter Password" class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <button type="button" onclick="togglePasswordVisibility('confirmPassword', 'eyeIcon2')" class="absolute right-3 top-3 text-gray-500 text-sm">
+                            <span id="eyeIcon2">👁️</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="workTypeContainer" class="hidden">
@@ -95,7 +112,7 @@
                     <label class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
                     <div class="flex space-x-2">
                         <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
-                        <button type="button" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Register</button>
+                        <button type="button" id="verifyBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Register</button>
                     </div>
 
                     <div class="flex justify-between items-center text-xs pt-1">
@@ -146,6 +163,18 @@
             updateFormUI();
         }
 
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.innerText = "🙈";
+            } else {
+                input.type = "password";
+                icon.innerText = "👁️";
+            }
+        }
+
         function updateFormUI() {
             const title = document.getElementById('formTitle');
             const sub = document.getElementById('formSub');
@@ -153,7 +182,9 @@
             const toggleTxt = document.getElementById('toggleText');
             const workTypeContainer = document.getElementById('workTypeContainer');
             const emailContainer = document.getElementById('emailContainer');
+            const confirmPasswordContainer = document.getElementById('confirmPasswordContainer');
             const emailInput = document.getElementById('email');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
 
             let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
 
@@ -168,7 +199,9 @@
                 sub.innerText = "Create account using Email OTP & Password";
                 btn.innerText = "Send OTP";
                 emailContainer.classList.remove('hidden');
+                confirmPasswordContainer.classList.remove('hidden');
                 emailInput.required = true;
+                confirmPasswordInput.required = true;
                 btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
                 toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
             } else {
@@ -176,7 +209,9 @@
                 sub.innerText = "Enter Mobile & Password to login";
                 btn.innerText = "Sign In Direct";
                 emailContainer.classList.add('hidden');
+                confirmPasswordContainer.classList.add('hidden');
                 emailInput.required = false;
+                confirmPasswordInput.required = false;
                 btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
                 toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
             }
@@ -203,7 +238,13 @@
             let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
 
             if (isSignupMode) {
-                // Sign Up Process
+                let confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+                if (password !== confirmPassword) {
+                    showStatus("❌ पासवर्ड जुळत नाहीत! कृपया दोन्ही पासवर्ड तपासा.", "error");
+                    return;
+                }
+
                 if (savedUserJson) {
                     showStatus("हा मोबाईल नंबर आधीपासून रजिस्टर आहे! कृपया Direct Sign In करा.", "error");
                     return;
@@ -221,7 +262,7 @@
                 sendEmailOTP(email, generatedOTP);
 
             } else {
-                // Sign In Process (Direct Login using Password)
+                // Direct Login using Password
                 if (!savedUserJson) {
                     showStatus("Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
                     return;
@@ -249,6 +290,10 @@
         }
 
         function sendEmailOTP(email, otp) {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "⏳ Sending OTP...";
+
             showStatus("⏳ Sending OTP to " + email + "...", "info");
 
             const serviceID = 'service_lst67g7';
@@ -266,11 +311,14 @@
                 .then(() => {
                     showStatus("📩 OTP पाठवला आहे! कृपया Inbox किंवा Spam folder तपासा.", "success");
                     document.getElementById('otpContainer').classList.remove('hidden');
-                    document.getElementById('submitBtn').classList.add('hidden');
+                    btn.classList.add('hidden');
+                    btn.disabled = false;
                 })
                 .catch((err) => {
                     console.error("EmailJS Error:", err);
                     showStatus("❌ Email पाठवणे अपयशी ठरले. EmailJS Template तपासा.", "error");
+                    btn.disabled = false;
+                    btn.innerText = "Send OTP";
                 });
         }
 
@@ -284,9 +332,12 @@
             if(event) event.preventDefault();
             
             let userEnteredOTP = document.getElementById('otpInput').value.trim();
+            const verifyBtn = document.getElementById('verifyBtn');
 
             if (userEnteredOTP === generatedOTP) {
-                // रजिस्ट्रेशन पूर्ण करा आणि डेटा सेव्ह करा
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = "Verifying...";
+
                 localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
                 localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
 

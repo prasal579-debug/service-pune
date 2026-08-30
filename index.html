@@ -132,14 +132,6 @@
         let pendingUserData = null;
         let resendTimer = null;
 
-        function redirectToDashboard(role) {
-            const pageName = (role === 'customer') ? 'customer.html' : 'worker.html';
-            // Absolute URL तयार करून रीडायरेक्ट करणे (GitHub Pages सुसज्जता)
-            const currentPath = window.location.pathname;
-            const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-            window.location.href = window.location.origin + basePath + pageName;
-        }
-
         function setRole(role) {
             currentRole = role;
             const tabC = document.getElementById('tabCustomer');
@@ -159,11 +151,7 @@
             currentMode = mode;
             showStatus('', 'hidden');
             document.getElementById('otpContainer').classList.add('hidden');
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.classList.remove('hidden');
-            submitBtn.disabled = false;
-
+            document.getElementById('submitBtn').classList.remove('hidden');
             if(resendTimer) clearInterval(resendTimer);
             updateFormUI();
         }
@@ -282,6 +270,7 @@
 
             let mobile = document.getElementById('mobile').value.trim();
             let password = document.getElementById('password').value.trim();
+            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
 
             if (currentMode === 'signup') {
                 let confirmPassword = document.getElementById('confirmPassword').value.trim();
@@ -296,7 +285,6 @@
                     return;
                 }
 
-                let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
                 if (savedUserJson) {
                     showStatus("हा मोबाईल नंबर आधीपासून रजिस्टर आहे! कृपया Direct Sign In करा.", "error");
                     return;
@@ -313,32 +301,28 @@
                 sendEmailOTP(email, mobile);
 
             } else if (currentMode === 'signin') {
-                let savedUserRaw = localStorage.getItem('gharkam_user_' + mobile);
-
-                if (!savedUserRaw) {
-                    showStatus("❌ Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
+                if (!savedUserJson) {
+                    showStatus("Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
                     return;
                 }
 
-                let savedUser = JSON.parse(savedUserRaw);
+                let savedUser = JSON.parse(savedUserJson);
 
-                if (String(savedUser.password).trim() === String(password).trim()) {
+                if (savedUser.password === password) {
                     savedUser.role = currentRole;
                     localStorage.setItem('current_user_session', JSON.stringify(savedUser));
 
                     showStatus("🎉 लॉगिन यशस्वी झाले! Redirecting...", "success");
 
                     setTimeout(() => {
-                        redirectToDashboard(currentRole);
-                    }, 500);
+                        window.location.href = (currentRole === 'customer') ? "./customer.html" : "./worker.html";
+                    }, 800);
                 } else {
                     showStatus("❌ चुकीचा पासवर्ड! कृपया पुन्हा प्रयत्न करा.", "error");
                 }
 
             } else if (currentMode === 'forgot') {
                 let email = document.getElementById('email').value.trim().toLowerCase();
-                let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
-
                 if (!savedUserJson) {
                     showStatus("हा मोबाईल नंबर रजिस्टर नाही! कृपया आधी Sign Up करा.", "error");
                     return;
@@ -474,8 +458,8 @@
                     }
 
                     setTimeout(() => {
-                        redirectToDashboard(currentRole);
-                    }, 500);
+                        window.location.href = (currentRole === 'customer') ? "./customer.html" : "./worker.html";
+                    }, 800);
                 } else {
                     showStatus("❌ " + (data.message || "चुकीचा OTP! अचूक कोड टाका."), "error");
                     verifyBtn.disabled = false;

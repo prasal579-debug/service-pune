@@ -6,14 +6,6 @@
     <title>Gharkam.com - Secure Auth</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("PfAaODZ_GPiBPHvOi"); 
-        })();
-    </script>
     <style>
         body { font-family: 'Poppins', sans-serif; }
         .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
@@ -47,8 +39,8 @@
             
             <!-- Role Selection -->
             <div class="flex mb-6 bg-gray-200 p-1 rounded-xl">
-                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
-                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
+                <button type="button" onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
+                <button type="button" onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
             </div>
 
             <div class="text-center mb-6">
@@ -138,9 +130,11 @@
     </footer>
 
     <script>
+        // Node.js Backend Server URL (तुमचा पोर्ट ५००० किंवा जो असेल तो इथे बदला)
+        const BACKEND_URL = "http://localhost:5000";
+
         let currentRole = 'customer'; 
         let currentMode = 'signup'; 
-        let generatedOTP = null;
         let pendingUserData = null;
         let resendTimer = null;
 
@@ -305,8 +299,7 @@
                     workType: selectedWorkType 
                 };
 
-                generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-                sendEmailOTP(email, generatedOTP);
+                sendEmailOTP(email, mobile);
 
             } else if (currentMode === 'signin') {
                 if (!savedUserJson) {
@@ -323,11 +316,7 @@
                     showStatus("🎉 लॉगिन यशस्वी झाले! Redirecting...", "success");
 
                     setTimeout(() => {
-                        if (currentRole === 'customer') {
-                            window.location.href = "./customer.html";
-                        } else if (currentRole === 'worker') {
-                            window.location.href = "./worker.html";
-                        }
+                        window.location.href = (currentRole === 'customer') ? "./customer.html" : "./worker.html";
                     }, 800);
                 } else {
                     showStatus("❌ चुकीचा पासवर्ड! कृपया पुन्हा प्रयत्न करा.", "error");
@@ -349,45 +338,45 @@
                 pendingUserData = savedUser;
                 pendingUserData.newPassword = password; 
 
-                generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-                sendEmailOTP(savedUser.email, generatedOTP);
+                sendEmailOTP(savedUser.email, mobile);
             }
         }
 
-        function sendEmailOTP(email, otp) {
+        // Node.js Server वरून OTP पाठवणे
+        async function sendEmailOTP(email, mobile) {
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.innerText = "⏳ Sending OTP...";
 
             showStatus("⏳ Sending OTP to " + email + "...", "info");
 
-            const serviceID = 'service_lst67g7';
-            const templateID = 'template_ope5xzi';
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, mobile })
+                });
 
-            const templateParams = {
-                to_email: email,
-                email: email,
-                user_email: email,
-                otp_code: otp,
-                message: "Your Gharkam.com OTP Code is: " + otp
-            };
+                const data = await response.json();
 
-            emailjs.send(serviceID, templateID, templateParams)
-                .then(() => {
+                if (response.ok && data.success) {
                     showStatus("📩 OTP पाठवला आहे! कृपया Inbox किंवा Spam folder तपासा.", "success");
                     document.getElementById('otpContainer').classList.remove('hidden');
                     btn.classList.add('hidden');
                     btn.disabled = false;
                     
-                    // Resend Timer Start (30 Seconds)
                     startResendTimer();
-                })
-                .catch((err) => {
-                    console.error("EmailJS Error:", err);
-                    showStatus("❌ Email पाठवणे अपयशी ठरले. EmailJS Template तपासा.", "error");
+                } else {
+                    showStatus("❌ " + (data.message || "OTP पाठवणे अपयशी ठरले."), "error");
                     btn.disabled = false;
                     btn.innerText = "Send OTP";
-                });
+                }
+            } catch (err) {
+                console.error("Server Error:", err);
+                showStatus("❌ सर्व्हरशी संपर्क होऊ शकला नाही. Node.js सर्व्हर सुरू आहे का तपासा.", "error");
+                btn.disabled = false;
+                btn.innerText = "Send OTP";
+            }
         }
 
         function startResendTimer() {
@@ -413,50 +402,71 @@
 
         function resendOTP() {
             let email = pendingUserData ? pendingUserData.email : document.getElementById('email').value.trim();
+            let mobile = pendingUserData ? pendingUserData.mobile : document.getElementById('mobile').value.trim();
+
             if(!email) {
                 showStatus("❌ ई-मेल सापडला नाही! कृपया ई-मेल तपासा.", "error");
                 return;
             }
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            sendEmailOTP(email, generatedOTP);
+            sendEmailOTP(email, mobile);
         }
 
-        function verifyOTPAndRegister(event) {
+        // Node.js Server वर OTP व्हेरिफाय करणे
+        async function verifyOTPAndRegister(event) {
             if(event) event.preventDefault();
             
             let userEnteredOTP = document.getElementById('otpInput').value.trim();
             const verifyBtn = document.getElementById('verifyBtn');
 
-            if (userEnteredOTP === generatedOTP) {
-                verifyBtn.disabled = true;
-                verifyBtn.innerText = "Verifying...";
+            if (!userEnteredOTP) {
+                showStatus("❌ कृपया OTP टाका.", "error");
+                return;
+            }
 
-                if (currentMode === 'signup') {
-                    localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
-                    localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
-                    showStatus("🎉 अकाऊंट यशस्वीरीत्या तयार झाले! Redirecting...", "success");
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying...";
 
-                } else if (currentMode === 'forgot') {
-                    pendingUserData.password = pendingUserData.newPassword;
-                    delete pendingUserData.newPassword;
-                    localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
-                    showStatus("🎉 पासवर्ड यशस्वीरीत्या बदलला! आता लॉगिन करा.", "success");
-                    
-                    setTimeout(() => {
-                        toggleMode('signin');
-                    }, 1500);
-                    return;
-                }
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: pendingUserData ? pendingUserData.email : '', 
+                        otp: userEnteredOTP 
+                    })
+                });
 
-                setTimeout(() => {
-                    if (currentRole === 'customer') {
-                        window.location.href = "./customer.html";
-                    } else if (currentRole === 'worker') {
-                        window.location.href = "./worker.html";
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (currentMode === 'signup') {
+                        localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                        localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
+                        showStatus("🎉 अकाऊंट यशस्वीरीत्या तयार झाले! Redirecting...", "success");
+
+                    } else if (currentMode === 'forgot') {
+                        pendingUserData.password = pendingUserData.newPassword;
+                        delete pendingUserData.newPassword;
+                        localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                        showStatus("🎉 पासवर्ड यशस्वीरीत्या बदलला! आता लॉगिन करा.", "success");
+                        
+                        setTimeout(() => { toggleMode('signin'); }, 1500);
+                        return;
                     }
-                }, 800);
-            } else {
-                showStatus("❌ चुकीचा OTP! अचूक कोड टाका.", "error");
+
+                    setTimeout(() => {
+                        window.location.href = (currentRole === 'customer') ? "./customer.html" : "./worker.html";
+                    }, 800);
+                } else {
+                    showStatus("❌ " + (data.message || "चुकीचा OTP! अचूक कोड टाका."), "error");
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerText = "Verify & Proceed";
+                }
+            } catch (err) {
+                console.error("Server Error:", err);
+                showStatus("❌ व्हेरिफिकेशन दरम्यान त्रुटी आली.", "error");
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Verify & Proceed";
             }
         }
     </script>

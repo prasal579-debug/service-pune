@@ -44,6 +44,369 @@
             </div>
 
             <div class="text-center mb-6">
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Sign In</h2>
+                <p id="formSub" class="text-xs text-gray-500 mt-1">Enter Mobile & Password to login</p>
+            </div>
+
+            <!-- Status Message Box -->
+            <div id="statusMsg" class="hidden mb-4 p-3 rounded-xl text-center text-xs font-semibold"></div>
+
+            <form id="authForm" onsubmit="handleFormSubmit(event)" class="space-y-4" novalidate>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Mobile Number:</label>
+                    <input type="tel" id="mobile" placeholder="10-digit mobile number" maxlength="10" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div id="emailContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email ID:</label>
+                    <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <!-- Password Field -->
+                <div id="passwordContainer">
+                    <div class="flex justify-between items-center mb-1">
+                        <label id="passLabel" class="block text-xs font-semibold text-gray-600">Password:</label>
+                        <a href="#" id="forgotPassBtn" onclick="switchToForgotPassMode()" class="text-xs text-blue-600 hover:underline font-semibold">Forgot Password?</a>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="password" minlength="6" placeholder="Enter Password (min 6 chars)" class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <button type="button" onclick="togglePasswordVisibility('password', 'eyeIcon1')" class="absolute right-3 top-3 text-gray-500 text-sm">
+                            <span id="eyeIcon1">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div id="confirmPasswordContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Confirm Password:</label>
+                    <div class="relative">
+                        <input type="password" id="confirmPassword" minlength="6" placeholder="Re-enter Password" class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <button type="button" onclick="togglePasswordVisibility('confirmPassword', 'eyeIcon2')" class="absolute right-3 top-3 text-gray-500 text-sm">
+                            <span id="eyeIcon2">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="workTypeContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Work Expertise:</label>
+                    <select id="workType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm bg-white">
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Painting">Painting</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-300">
+                    Sign In Direct
+                </button>
+
+                <!-- OTP Input Area -->
+                <div id="otpContainer" class="hidden space-y-3 pt-3 border-t">
+                    <label class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
+                        <button type="button" id="verifyBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Proceed</button>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs pt-1">
+                        <button type="button" onclick="resendOTP()" id="resendBtn" class="text-blue-600 hover:underline font-semibold">🔄 Resend OTP</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="text-center mt-6">
+                <p id="toggleText" class="text-xs text-gray-600">
+                    Don't have an account? <a href="#" onclick="toggleMode('signup')" class="text-blue-600 font-bold hover:underline">Sign Up</a>
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-blue-200 text-xs bg-black/20">
+        &copy; 2026 Gharkam.com | Pune City
+    </footer>
+
+    <script>
+        const BACKEND_URL = "http://localhost:5000";
+
+        let currentRole = 'customer'; 
+        let currentMode = 'signin'; // Default Mode Sign In ठेवला आहे
+        let pendingUserData = null;
+        let resendTimer = null;
+
+        // Page load झाल्यावर UI सेट करणे
+        window.onload = function() {
+            updateFormUI();
+        };
+
+        function setRole(role) {
+            currentRole = role;
+            const tabC = document.getElementById('tabCustomer');
+            const tabW = document.getElementById('tabWorker');
+
+            if (role === 'customer') {
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition";
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            } else {
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-900 transition";
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            }
+            updateFormUI();
+        }
+
+        function toggleMode(mode) {
+            currentMode = mode;
+            showStatus('', 'hidden');
+            document.getElementById('otpContainer').classList.add('hidden');
+            document.getElementById('submitBtn').classList.remove('hidden');
+            if(resendTimer) clearInterval(resendTimer);
+            updateFormUI();
+        }
+
+        function switchToForgotPassMode() {
+            toggleMode('forgot');
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.innerText = "🙈";
+            } else {
+                input.type = "password";
+                icon.innerText = "👁️";
+            }
+        }
+
+        function updateFormUI() {
+            const title = document.getElementById('formTitle');
+            const sub = document.getElementById('formSub');
+            const btn = document.getElementById('submitBtn');
+            const toggleTxt = document.getElementById('toggleText');
+            const workTypeContainer = document.getElementById('workTypeContainer');
+            const emailContainer = document.getElementById('emailContainer');
+            const passwordContainer = document.getElementById('passwordContainer');
+            const confirmPasswordContainer = document.getElementById('confirmPasswordContainer');
+            const forgotPassBtn = document.getElementById('forgotPassBtn');
+            const passLabel = document.getElementById('passLabel');
+
+            let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
+
+            if (currentMode === 'signup' && currentRole === 'worker') {
+                workTypeContainer.classList.remove('hidden');
+            } else {
+                workTypeContainer.classList.add('hidden');
+            }
+
+            if (currentMode === 'signup') {
+                title.innerText = roleName + " Signup";
+                sub.innerText = "Create account using Email OTP & Password";
+                btn.innerText = "Send OTP";
+                
+                emailContainer.classList.remove('hidden');
+                passwordContainer.classList.remove('hidden');
+                confirmPasswordContainer.classList.remove('hidden');
+                forgotPassBtn.classList.add('hidden');
+                passLabel.innerText = "Password:";
+
+                btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode('signin')" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
+
+            } else if (currentMode === 'signin') {
+                title.innerText = roleName + " Sign In";
+                sub.innerText = "Enter Mobile & Password to login";
+                btn.innerText = "Sign In Direct";
+
+                emailContainer.classList.add('hidden');
+                passwordContainer.classList.remove('hidden');
+                confirmPasswordContainer.classList.add('hidden');
+                forgotPassBtn.classList.remove('hidden');
+                passLabel.innerText = "Password:";
+
+                btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode('signup')" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
+
+            } else if (currentMode === 'forgot') {
+                title.innerText = "Reset Password";
+                sub.innerText = "Verify Mobile & OTP to set new password";
+                btn.innerText = "Send Reset OTP";
+
+                emailContainer.classList.add('hidden');
+                passwordContainer.classList.remove('hidden');
+                confirmPasswordContainer.classList.remove('hidden');
+                forgotPassBtn.classList.add('hidden');
+                passLabel.innerText = "New Password:";
+
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Remembered Password? <a href="#" onclick="toggleMode('signin')" class="text-blue-600 font-bold hover:underline">Back to Sign In</a>`;
+            }
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            if (type === 'hidden') {
+                el.classList.add('hidden');
+                return;
+            }
+            el.innerText = msg;
+            el.className = "mb-4 p-3 rounded-xl text-center text-xs font-semibold " + 
+                (type === 'success' ? "bg-green-100 border border-green-400 text-green-700" : 
+                 type === 'error' ? "bg-red-100 border border-red-400 text-red-700" : "bg-blue-100 border border-blue-400 text-blue-700");
+            el.classList.remove('hidden');
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            let mobile = document.getElementById('mobile').value.trim();
+            let password = document.getElementById('password').value.trim();
+
+            if (!mobile || mobile.length !== 10) {
+                showStatus("❌ कृपया १० अंकी अचूक मोबाईल नंबर टाका.", "error");
+                return;
+            }
+
+            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
+
+            if (currentMode === 'signup') {
+                let confirmPassword = document.getElementById('confirmPassword').value.trim();
+                let email = document.getElementById('email').value.trim();
+
+                if (!email) {
+                    showStatus("❌ कृपया Email ID टाका.", "error");
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showStatus("❌ पासवर्ड जुळत नाहीत! कृपया दोन्ही पासवर्ड तपासा.", "error");
+                    return;
+                }
+
+                if (savedUserJson) {
+                    showStatus("⚠️ हा मोबाईल नंबर आधीपासून रजिस्टर आहे! कृपया Direct Sign In करा.", "error");
+                    return;
+                }
+
+                let selectedWorkType = (currentRole === 'worker') ? document.getElementById('workType').value : null;
+
+                pendingUserData = { 
+                    mobile, email, password, role: currentRole, balance: 50, 
+                    workType: selectedWorkType 
+                };
+
+                sendEmailOTP(email, mobile);
+
+            } else if (currentMode === 'signin') {
+                if (!password) {
+                    showStatus("❌ कृपया पासवर्ड टाका.", "error");
+                    return;
+                }
+
+                if (!savedUserJson) {
+                    showStatus("❌ Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
+                    return;
+                }
+
+                let savedUser = JSON.parse(savedUserJson);
+
+                if (savedUser.password === password) {
+                    savedUser.role = currentRole;
+                    localStorage.setItem('current_user_session', JSON.stringify(savedUser));
+
+                    showStatus("🎉 लॉगिन यशस्वी झाले! Dashboard वर पाठवत आहे...", "success");
+
+                    setTimeout(() => {
+                        window.location.href = (currentRole === 'customer') ? "customer.html" : "worker.html";
+                    }, 800);
+                } else {
+                    showStatus("❌ चुकीचा पासवर्ड! कृपया पुन्हा प्रयत्न करा.", "error");
+                }
+
+            } else if (currentMode === 'forgot') {
+                if (!savedUserJson) {
+                    showStatus("❌ हा मोबाईल नंबर रजिस्टर नाही! कृपया आधी Sign Up करा.", "error");
+                    return;
+                }
+
+                let confirmPassword = document.getElementById('confirmPassword').value.trim();
+                if (password !== confirmPassword) {
+                    showStatus("❌ पासवर्ड जुळत नाहीत! कृपया दोन्ही पासवर्ड तपासा.", "error");
+                    return;
+                }
+
+                let savedUser = JSON.parse(savedUserJson);
+                pendingUserData = savedUser;
+                pendingUserData.newPassword = password; 
+
+                sendEmailOTP(savedUser.email, mobile);
+            }
+        }
+
+        async function sendEmailOTP(email, mobile) {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled =या कोडमध्ये UI/UX सुलभ करण्यासाठी, सिक्युरिटी सुधारण्यासाठी आणिNode.js API integration सहज चालण्यासाठी काही सुधारणा आवश्यक आहेत. 
+
+खालील मुख्य मुद्दे आणि त्यावरील उपाय दिले आहेत:
+
+1. **Forgot Password Flow मधील त्रुटी:** `forgot` मोडमध्ये ईमेल इनपुट लपवले जाते (`emailContainer.classList.add('hidden')`), पण OTP ईमेलवर पाठवण्यासाठी ईमेलची आवश्यकता असते. यूजरने फक्त मोबाईल नंबर टाकला तरी सर्व्हरला ईमेल पाठवता येत नाही.
+2. **OTP नंतर Direct Verification:** फॉर्म सबमिट झाल्यानंतर जेव्हा OTP कंटेनर उघडतो, तेव्हा लगेच 'Send OTP' बटण लपवून 'Verify & Proceed' युजरला स्पष्टपणे दिसावे.
+3. **Password Validation Logic:** साइन-अप किंवा रीसेट करताना पासवर्डची लांबी कमीत कमी ६ कॅरेक्टर्स असणे आवश्यक आहे याचे क्लायंट-साइड व्हॅलिडेशन जोडले पाहिजे.
+
+---
+
+### **अपडेट केलेला आणि पूर्ण सुधारित कोड:**
+
+```html
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gharkam.com - Secure Auth</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap)" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="hero-bg min-h-screen flex flex-col justify-between text-gray-800">
+
+    <!-- Header -->
+    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-white p-2 rounded-full shadow-lg font-bold text-blue-600 text-xl">🏠 GK</div>
+            <div>
+                <h1 class="text-white text-2xl font-bold">GHARKAM<span class="text-yellow-400">.com</span></h1>
+                <p class="text-xs text-blue-200">Pune City Services</p>
+            </div>
+        </div>
+        <div>
+            <span id="location-status" class="text-xs bg-yellow-400 text-gray-900 px-3 py-1.5 rounded-full font-semibold shadow-inner">📍 Pune Verified</span>
+        </div>
+    </header>
+
+    <!-- Main Auth Card -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10">
+        <div class="max-w-md w-full glass-card p-8">
+            
+            <!-- Role Selection -->
+            <div class="flex mb-6 bg-gray-200 p-1 rounded-xl">
+                <button type="button" onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
+                <button type="button" onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
+            </div>
+
+            <div class="text-center mb-6">
                 <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Signup</h2>
                 <p id="formSub" class="text-xs text-gray-500 mt-1">Create account using Email OTP</p>
             </div>
@@ -106,7 +469,7 @@
                 <div id="otpContainer" class="hidden space-y-3 pt-3 border-t">
                     <label class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
                     <div class="flex space-x-2">
-                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
+                        <input type="text" id="otpInput" placeholder="6-digit OTP" maxlength="6" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
                         <button type="button" id="verifyBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Proceed</button>
                     </div>
 
@@ -130,7 +493,6 @@
     </footer>
 
     <script>
-        // Node.js Backend Server URL (तुमचा पोर्ट ५००० किंवा जो असेल तो इथे बदला)
         const BACKEND_URL = "http://localhost:5000";
 
         let currentRole = 'customer'; 
@@ -243,12 +605,13 @@
                 sub.innerText = "Verify Mobile & OTP to set new password";
                 btn.innerText = "Send Reset OTP";
 
-                emailContainer.classList.add('hidden');
+                // Forgot Password साठी ईमेल आवश्यक आहे म्हणून दृश्यमान ठेवले
+                emailContainer.classList.remove('hidden');
                 passwordContainer.classList.remove('hidden');
                 confirmPasswordContainer.classList.remove('hidden');
                 forgotPassBtn.classList.add('hidden');
 
-                emailInput.required = false;
+                emailInput.required = true;
                 passwordInput.required = true;
                 confirmPasswordInput.required = true;
                 passLabel.innerText = "New Password:";
@@ -280,6 +643,11 @@
 
             if (currentMode === 'signup') {
                 let confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+                if (password.length < 6) {
+                    showStatus("❌ पासवर्ड किमान ६ अक्षरांचा असावा.", "error");
+                    return;
+                }
 
                 if (password !== confirmPassword) {
                     showStatus("❌ पासवर्ड जुळत नाहीत! कृपया दोन्ही पासवर्ड तपासा.", "error");
@@ -323,6 +691,7 @@
                 }
 
             } else if (currentMode === 'forgot') {
+                let email = document.getElementById('email').value.trim();
                 if (!savedUserJson) {
                     showStatus("हा मोबाईल नंबर रजिस्टर नाही! कृपया आधी Sign Up करा.", "error");
                     return;
@@ -335,14 +704,18 @@
                 }
 
                 let savedUser = JSON.parse(savedUserJson);
+                if(savedUser.email !== email) {
+                    showStatus("❌ मोबाईल नंबर आणि ईमेल मॅच होत नाहीत.", "error");
+                    return;
+                }
+
                 pendingUserData = savedUser;
                 pendingUserData.newPassword = password; 
 
-                sendEmailOTP(savedUser.email, mobile);
+                sendEmailOTP(email, mobile);
             }
         }
 
-        // Node.js Server वरून OTP पाठवणे
         async function sendEmailOTP(email, mobile) {
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
@@ -411,15 +784,14 @@
             sendEmailOTP(email, mobile);
         }
 
-        // Node.js Server वर OTP व्हेरिफाय करणे
         async function verifyOTPAndRegister(event) {
             if(event) event.preventDefault();
             
             let userEnteredOTP = document.getElementById('otpInput').value.trim();
             const verifyBtn = document.getElementById('verifyBtn');
 
-            if (!userEnteredOTP) {
-                showStatus("❌ कृपया OTP टाका.", "error");
+            if (!userEnteredOTP || userEnteredOTP.length !== 6) {
+                showStatus("❌ कृपया ६-अंकी वैध OTP टाका.", "error");
                 return;
             }
 
@@ -431,7 +803,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        email: pendingUserData ? pendingUserData.email : '', 
+                        email: pendingUserData ? pendingUserData.email : document.getElementById('email').value.trim(), 
                         otp: userEnteredOTP 
                     })
                 });

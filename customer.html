@@ -3,188 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Booking - Gharkam.com</title>
+    <title>Gharkam.com - Secure Login & Signup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("PfAaODZ_GPiBPHvOi"); 
+        })();
+    </script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: #f4f7f6; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        
-        .card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h3 { color: #333; margin-bottom: 20px; text-align: center; }
-        
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        
-        .btn-submit { width: 100%; padding: 12px; background: #007bff; border: none; color: white; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-submit:hover { background: #0056b3; }
-        
-        #statusMessage { display: none; margin-top: 15px; padding: 12px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; text-align: center; font-weight: bold; }
-
-        /* Order Details Card Below Form */
-        .order-card { display: none; background: #fff; border-top: 4px solid #28a745; margin-top: 20px; }
-        .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 12px; }
-        .status-badge { background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        
-        .order-info p { margin: 8px 0; font-size: 14px; color: #444; }
-        .order-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin: 10px 0; border: 1px solid #ddd; }
-        
-        .btn-delete { width: 100%; padding: 10px; background: #dc3545; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 12px; font-size: 14px; }
-        .btn-delete:hover { background: #c82333; }
+        body { font-family: 'Poppins', sans-serif; }
+        .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
-<body>
+<body class="hero-bg min-h-screen flex flex-col justify-between text-gray-800">
 
-<div class="container">
-
-    <!-- Booking Form -->
-    <div class="card">
-        <h3>नवीन बुकिंग करा</h3>
-        
-        <form id="bookingForm">
-            <div class="form-group">
-                <label>कामाचा प्रकार निवडा</label>
-                <select id="serviceType" required>
-                    <option value="">निवडा...</option>
-                    <option value="Plumbing (नळ दुरुस्ती)">Plumbing (नळ दुरुस्ती)</option>
-                    <option value="Electrician (इलेक्ट्रिशियन)">Electrician (इलेक्ट्रिशियन)</option>
-                    <option value="Painter (कलर काम)">Painter (कलर काम)</option>
-                    <option value="Housekeeper (घरची स्वच्छता)">Housekeeper (घरची स्वच्छता)</option>
-                </select>
+    <!-- Header -->
+    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-white p-2 rounded-full shadow-lg font-bold text-blue-600 text-xl">🏠 GK</div>
+            <div>
+                <h1 class="text-white text-2xl font-bold">GHARKAM<span class="text-yellow-400">.com</span></h1>
+                <p class="text-xs text-blue-200">Pune City Services</p>
             </div>
-
-            <div class="form-group">
-                <label>पुण्यातील एरिया निवडा</label>
-                <select id="area" required>
-                    <option value="">एरिया निवडा...</option>
-                    <option value="Swargate">Swargate</option>
-                    <option value="Katraj">Katraj</option>
-                    <option value="Shivaji Nagar">Shivaji Nagar</option>
-                    <option value="Kothrud">Kothrud</option>
-                    <option value="Hadapsar">Hadapsar</option>
-                    <option value="Deccan">Deccan</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>तारीख आणि वेळ</label>
-                <input type="datetime-local" id="timeSlot" required>
-            </div>
-
-            <div class="form-group">
-                <label>कामाचा फोटो अपलोड करा</label>
-                <input type="file" id="jobPhoto" accept="image/*">
-            </div>
-
-            <div class="form-group">
-                <label>तुम्ही देणारे पेमेंट (₹ मध्ये)</label>
-                <input type="number" id="price" placeholder="उदा. 300" min="50" required>
-            </div>
-
-            <button type="submit" class="btn-submit">बुकिंग सबमिट करा</button>
-        </form>
-
-        <div id="statusMessage">
-            तुमची ऑर्डर यशस्वीरित्या नोंदवली गेली आहे! वर्कर शोधत आहे...
         </div>
-    </div>
-
-    <!-- Active Order Details Displayed Below -->
-    <div class="card order-card" id="activeOrderCard">
-        <div class="order-header">
-            <h4 style="margin: 0; color: #333;">📋 तुमची टाकलेली ऑर्डर</h4>
-            <span class="status-badge">वर्कर शोधात आहे</span>
+        <div>
+            <span id="location-status" class="text-xs bg-yellow-400 text-gray-900 px-3 py-1.5 rounded-full font-semibold shadow-inner">📍 Pune Verified</span>
         </div>
-        
-        <div class="order-info">
-            <p><strong>कामाचा प्रकार:</strong> <span id="dispService">--</span></p>
-            <p><strong>एरिया:</strong> <span id="dispArea">--</span></p>
-            <p><strong>तारीख व वेळ:</strong> <span id="dispTime">--</span></p>
-            <p><strong>ठरलेले पेमेंट:</strong> ₹<span id="dispPrice">0</span></p>
-            <p style="margin-top: 8px;"><strong>अपलोड केलेला फोटो:</strong></p>
-            <img id="dispImage" src="" alt="Work Photo" class="order-img">
-        </div>
+    </header>
 
-        <button class="btn-delete" onclick="deleteOrder()">🗑️ ऑर्डर डिलीट (कॅन्सल) करा</button>
-    </div>
-
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        checkAndShowOrder();
-
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const serviceType = document.getElementById('serviceType').value;
-            const area = document.getElementById('area').value;
-            const timeSlot = document.getElementById('timeSlot').value;
-            const price = document.getElementById('price').value;
-            const photoInput = document.getElementById('jobPhoto');
-
-            const defaultImg = "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500";
-
-            if (photoInput.files && photoInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    saveOrder(serviceType, area, timeSlot, price, evt.target.result);
-                };
-                reader.readAsDataURL(photoInput.files[0]);
-            } else {
-                saveOrder(serviceType, area, timeSlot, price, defaultImg);
-            }
-        });
-    });
-
-    function saveOrder(serviceType, area, timeSlot, price, photo) {
-        const bookingData = {
-            serviceType,
-            area,
-            timeSlot,
-            price,
-            photo,
-            status: 'pending'
-        };
-
-        try {
-            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
-        } catch(err) {
-            // Photo खूप मोठा असेल तर fallback image वावरा
-            bookingData.photo = "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=500";
-            localStorage.setItem('gharkam_active_order', JSON.stringify(bookingData));
-        }
-
-        document.getElementById('bookingForm').reset();
-        checkAndShowOrder();
-    }
-
-    function checkAndShowOrder() {
-        const savedOrder = localStorage.getItem('gharkam_active_order');
-        if (savedOrder) {
-            const order = JSON.parse(savedOrder);
-            document.getElementById('dispService').innerText = order.serviceType;
-            document.getElementById('dispArea').innerText = order.area;
-            document.getElementById('dispTime').innerText = order.timeSlot;
-            document.getElementById('dispPrice').innerText = order.price;
-            document.getElementById('dispImage').src = order.photo;
+    <!-- Main Auth Card -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10">
+        <div class="max-w-md w-full glass-card p-8">
             
-            document.getElementById('activeOrderCard').style.display = 'block';
-            document.getElementById('statusMessage').style.display = 'block';
-        } else {
-            document.getElementById('activeOrderCard').style.display = 'none';
-            document.getElementById('statusMessage').style.display = 'none';
-        }
-    }
+            <!-- Role Selection -->
+            <div class="flex mb-6 bg-gray-200 p-1 rounded-xl" id="roleContainer">
+                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition">Customer</button>
+                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition">Worker</button>
+            </div>
 
-    function deleteOrder() {
-        if (confirm("तुम्हाला ही ऑर्डर नक्की डिलीट करायची आहे का?")) {
-            localStorage.removeItem('gharkam_active_order');
-            checkAndShowOrder();
-            alert("ऑर्डर यशस्वीरित्या डिलीट केली आहे.");
-        }
-    }
-</script>
+            <div class="text-center mb-6">
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Sign In</h2>
+                <p id="formSub" class="text-xs text-gray-500 mt-1">Enter Mobile & Password to Sign In</p>
+            </div>
 
+            <!-- Status Message Box -->
+            <div id="statusMsg" class="hidden mb-4 p-3 rounded-xl text-center text-xs font-semibold"></div>
+
+            <!-- Main Auth Form -->
+            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Mobile Number:</label>
+                    <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div id="emailContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email ID:</label>
+                    <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div id="passwordContainer">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password:</label>
+                    <input type="password" id="password" placeholder="••••••••" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div id="workTypeContainer" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Work Expertise:</label>
+                    <select id="workType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm bg-white">
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Painting">Painting</option>
+                    </select>
+                </div>
+
+                <div id="forgotPassLink" class="text-right text-xs">
+                    <a href="#" onclick="openForgotPasswordMode()" class="text-blue-600 font-semibold hover:underline">Forgot Password?</a>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-300">
+                    Sign In Direct
+                </button>
+            </form>
+
+            <!-- Forgot Password Modal/Section -->
+            <div id="forgotPassContainer" class="hidden space-y-4 pt-2 border-t">
+                <div id="otpStep">
+                    <label class="block text-xs font-semibold text-blue-600 mb-1">Enter OTP sent to your Registered Email:</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="forgotOtpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
+                        <button type="button" onclick="verifyForgotOTP()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify OTP</button>
+                    </div>
+                </div>
+
+                <div id="resetPasswordStep" class="hidden space-y-3">
+                    <label class="block text-xs font-semibold text-gray-600">Enter New Password:</label>
+                    <input type="password" id="newPassword" placeholder="New Password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <button type="button" onclick="resetNewPassword()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg hover:bg-blue-700 transition">Save & Login</button>
+                </div>
+            </div>
+
+            <div class="text-center mt-6">
+                <p id="toggleText" class="text-xs text-gray-600">
+                    Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-blue-200 text-xs bg-black/20">
+        &copy; 2026 Gharkam.com | Pune City
+    </footer>
+
+    <script>
+        let currentRole = 'customer'; 
+        let isSignupMode = false; // Default Direct Sign In Mode      
+        let generatedOTP = null;
+        let foundUserForReset = null;
+
+        function setRole(role) {
+            currentRole = role;
+            const tabC = document.getElementById('tabCustomer');
+            const tabW = document.getElementById('tabWorker');
+
+            if (role === 'customer') {
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white transition";
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            } else {
+                tabW.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-900 transition";
+                tabC.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-700 transition";
+            }
+            updateFormUI();
+        }
+
+        function toggleMode() {
+            isSignupMode = !isSignupMode;
+            resetForms();
+            updateFormUI();
+        }
+
+        function resetForms() {
+            showStatus('', 'hidden');
+            document.getElementById('forgotPassContainer').classList.add('hidden');
+            document.getElementById('submitBtn').classList.remove('hidden');
+            document.getElementById('forgotPassLink').classList.remove('hidden');
+        }
+
+        function updateFormUI() {
+            const title = document.getElementById('formTitle');
+            const sub = document.getElementById('formSub');
+            const btn = document.getElementById('submitBtn');
+            const toggleTxt = document.getElementById('toggleText');
+            const workTypeContainer = document.getElementById('workTypeContainer');
+            const emailContainer = document.getElementById('emailContainer');
+            const passwordContainer = document.getElementById('passwordContainer');
+
+            let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
+
+            if (isSignupMode) {
+                title.innerText = roleName + " Signup";
+                sub.innerText = "Create account with Mobile, Email & Password";
+                btn.innerText = "Sign Up";
+                emailContainer.classList.remove('hidden');
+                passwordContainer.classList.remove('hidden');
+                document.getElementById('email').required = true;
+                document.getElementById('password').required = true;
+                
+                if (currentRole === 'worker') {
+                    workTypeContainer.classList.remove('hidden');
+                } else {
+                    workTypeContainer.classList.add('hidden');
+                }
+
+                document.getElementById('forgotPassLink').classList.add('hidden');
+                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
+            } else {
+                title.innerText = roleName + " Sign In";
+                sub.innerText = "Enter Mobile & Password to Sign In";
+                btn.innerText = "Sign In Direct";
+                emailContainer.classList.add('hidden');
+                passwordContainer.classList.remove('hidden');
+                workTypeContainer.classList.add('hidden');
+                document.getElementById('email').required = false;
+                document.getElementById('password').required = true;
+                document.getElementById('forgotPassLink').classList.remove('hidden');
+
+                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
+            }
+            
+            btn.className = currentRole === 'customer' 
+                ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" 
+                : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            if (type === 'hidden') {
+                el.classList.add('hidden');
+                return;
+            }
+            el.innerText = msg;
+            el.className = "mb-4 p-3 rounded-xl text-center text-xs font-semibold " + 
+                (type === 'success' ? "bg-green-100 border border-green-400 text-green-700" : 
+                 type === 'error' ? "bg-red-100 border border-red-400 text-red-700" : "bg-blue-100 border border-blue-400 text-blue-700");
+            el.classList.remove('hidden');
+        }
+
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+
+            let mobile = document.getElementById('mobile').value;
+            let password = document.getElementById('password').value;
+            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
+
+            if (isSignupMode) {
+                if (savedUserJson) {
+                    showStatus("हा मोबाईल नंबर आधीच नोंदणीकृत आहे! डायरेक्ट लॉगिन करा.", "error");
+                    return;
+                }
+                let email = document.getElementById('email').value;
+                let selectedWorkType = (currentRole === 'worker') ? document.getElementById('workType').value : null;
+
+                let newUser = { mobile, email, password, role: currentRole, balance: 50, workType: selectedWorkType };
+                localStorage.setItem('gharkam_user_' + mobile, JSON.stringify(newUser));
+                localStorage.setItem('current_user_session', JSON.stringify(newUser));
+
+                showStatus("🎉 नोंदणी यशस्वी! रिडायरेक्ट होत आहे...", "success");
+                redirectUser();
+
+            } else {
+                if (!savedUserJson) {
+                    showStatus("❌ खाते सापडले नाही! कृपया आधी Sign Up करा.", "error");
+                    return;
+                }
+
+                let userData = JSON.parse(savedUserJson);
+
+                if (userData.password !== password) {
+                    showStatus("❌ चुकीचा Password! कृपया बरोबर पासवर्ड टाका.", "error");
+                    return;
+                }
+
+                userData.role = currentRole;
+                localStorage.setItem('current_user_session', JSON.stringify(userData));
+
+                showStatus("🎉 लॉगिन यशस्वी! रिडायरेक्ट होत आहे...", "success");
+                redirectUser();
+            }
+        }
+
+        /* --- Forgot Password Flow --- */
+        function openForgotPasswordMode() {
+            let mobile = document.getElementById('mobile').value;
+            if (!mobile || mobile.length !== 10) {
+                showStatus("कृपया आधी तुमचा 10-अंकी Mobile Number वर टाका!", "error");
+                return;
+            }
+
+            let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
+            if (!savedUserJson) {
+                showStatus("या मोबाईल नंबरचे अकाउंट सापडले नाही!", "error");
+                return;
+            }
+
+            foundUserForReset = JSON.parse(savedUserJson);
+            
+            // Generate OTP & Send Email
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            showStatus("⏳ OTP शोधत आहे व " + foundUserForReset.email + " वर पाठवत आहे...", "info");
+
+            const serviceID = 'service_lst67g7';
+            const templateID = 'template_ope5xzi';
+
+            const templateParams = {
+                to_email: foundUserForReset.email,
+                email: foundUserForReset.email,
+                user_email: foundUserForReset.email,
+                otp_code: generatedOTP,
+                message: "Password Reset साठी तुमचा Gharkam.com OTP Code आहे: " + generatedOTP
+            };
+
+            emailjs.send(serviceID, templateID, templateParams)
+                .then(() => {
+                    showStatus("📩 OTP " + foundUserForReset.email + " वर पाठवला आहे!", "success");
+                    document.getElementById('forgotPassContainer').classList.remove('hidden');
+                    document.getElementById('submitBtn').classList.add('hidden');
+                    document.getElementById('forgotPassLink').classList.add('hidden');
+                })
+                .catch((err) => {
+                    console.error("EmailJS Error:", err);
+                    showStatus("❌ Email पाठवताना त्रुटी आली. EmailJS तपासा.", "error");
+                });
+        }
+
+        function verifyForgotOTP() {
+            let userEnteredOTP = document.getElementById('forgotOtpInput').value.trim();
+
+            if (userEnteredOTP === generatedOTP) {
+                showStatus("✅ OTP व्हेरिफाय झाला! नवीन पासवर्ड टाका.", "success");
+                document.getElementById('otpStep').classList.add('hidden');
+                document.getElementById('resetPasswordStep').classList.remove('hidden');
+            } else {
+                showStatus("❌ चुकीचा OTP! कृपया अचूक कोड टाका.", "error");
+            }
+        }
+
+        function resetNewPassword() {
+            let newPass = document.getElementById('newPassword').value;
+            if (!newPass) {
+                showStatus("कृपया नवीन पासवर्ड टाका!", "error");
+                return;
+            }
+
+            // Update user password in localstorage
+            foundUserForReset.password = newPass;
+            localStorage.setItem('gharkam_user_' + foundUserForReset.mobile, JSON.stringify(foundUserForReset));
+            localStorage.setItem('current_user_session', JSON.stringify(foundUserForReset));
+
+            showStatus("🎉 पासवर्ड यशस्वीरित्या बदलला! रिडायरेक्ट होत आहे...", "success");
+            redirectUser();
+        }
+
+        function redirectUser() {
+            setTimeout(() => {
+                if (currentRole === 'customer') {
+                    window.location.href = "./customer.html";
+                } else if (currentRole === 'worker') {
+                    window.location.href = "./worker.html";
+                }
+            }, 800);
+        }
+    </script>
 </body>
 </html>

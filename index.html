@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gharkam.com - Secure Login & Signup</title>
+    <title>Gharkam.com - Secure Auth</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -71,18 +71,21 @@
                     <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
 
-                <!-- Password Field with Eye Toggle -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password:</label>
+                <!-- Password Field -->
+                <div id="passwordContainer">
+                    <div class="flex justify-between items-center mb-1">
+                        <label id="passLabel" class="block text-xs font-semibold text-gray-600">Password:</label>
+                        <a href="#" id="forgotPassBtn" onclick="switchToForgotPassMode()" class="text-xs text-blue-600 hover:underline font-semibold hidden">Forgot Password?</a>
+                    </div>
                     <div class="relative">
-                        <input type="password" id="password" minlength="6" placeholder="Enter Password (min 6 chars)" required class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <input type="password" id="password" minlength="6" placeholder="Enter Password (min 6 chars)" class="w-full p-3 pr-10 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                         <button type="button" onclick="togglePasswordVisibility('password', 'eyeIcon1')" class="absolute right-3 top-3 text-gray-500 text-sm">
                             <span id="eyeIcon1">👁️</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Confirm Password (Only for Sign Up) -->
+                <!-- Confirm Password -->
                 <div id="confirmPasswordContainer">
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Confirm Password:</label>
                     <div class="relative">
@@ -112,7 +115,7 @@
                     <label class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
                     <div class="flex space-x-2">
                         <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
-                        <button type="button" id="verifyBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Register</button>
+                        <button type="button" id="verifyBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Proceed</button>
                     </div>
 
                     <div class="flex justify-between items-center text-xs pt-1">
@@ -123,7 +126,7 @@
 
             <div class="text-center mt-6">
                 <p id="toggleText" class="text-xs text-gray-600">
-                    Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>
+                    Already have an account? <a href="#" onclick="toggleMode('signin')" class="text-blue-600 font-bold hover:underline">Sign In</a>
                 </p>
             </div>
 
@@ -136,9 +139,10 @@
 
     <script>
         let currentRole = 'customer'; 
-        let isSignupMode = true;      
+        let currentMode = 'signup'; 
         let generatedOTP = null;
         let pendingUserData = null;
+        let resendTimer = null;
 
         function setRole(role) {
             currentRole = role;
@@ -155,12 +159,17 @@
             updateFormUI();
         }
 
-        function toggleMode() {
-            isSignupMode = !isSignupMode;
+        function toggleMode(mode) {
+            currentMode = mode;
             showStatus('', 'hidden');
             document.getElementById('otpContainer').classList.add('hidden');
             document.getElementById('submitBtn').classList.remove('hidden');
+            if(resendTimer) clearInterval(resendTimer);
             updateFormUI();
+        }
+
+        function switchToForgotPassMode() {
+            toggleMode('forgot');
         }
 
         function togglePasswordVisibility(inputId, iconId) {
@@ -182,38 +191,76 @@
             const toggleTxt = document.getElementById('toggleText');
             const workTypeContainer = document.getElementById('workTypeContainer');
             const emailContainer = document.getElementById('emailContainer');
+            const passwordContainer = document.getElementById('passwordContainer');
             const confirmPasswordContainer = document.getElementById('confirmPasswordContainer');
+            const forgotPassBtn = document.getElementById('forgotPassBtn');
+            const passLabel = document.getElementById('passLabel');
+
             const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
             const confirmPasswordInput = document.getElementById('confirmPassword');
 
             let roleName = currentRole === 'customer' ? 'Customer' : 'Worker';
 
-            if (isSignupMode && currentRole === 'worker') {
+            if (currentMode === 'signup' && currentRole === 'worker') {
                 workTypeContainer.classList.remove('hidden');
             } else {
                 workTypeContainer.classList.add('hidden');
             }
 
-            if (isSignupMode) {
+            if (currentMode === 'signup') {
                 title.innerText = roleName + " Signup";
                 sub.innerText = "Create account using Email OTP & Password";
                 btn.innerText = "Send OTP";
+                
                 emailContainer.classList.remove('hidden');
+                passwordContainer.classList.remove('hidden');
                 confirmPasswordContainer.classList.remove('hidden');
+                forgotPassBtn.classList.add('hidden');
+
                 emailInput.required = true;
+                passwordInput.required = true;
                 confirmPasswordInput.required = true;
+                passLabel.innerText = "Password:";
+
                 btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
-                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
-            } else {
+                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode('signin')" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
+
+            } else if (currentMode === 'signin') {
                 title.innerText = roleName + " Sign In";
                 sub.innerText = "Enter Mobile & Password to login";
                 btn.innerText = "Sign In Direct";
+
                 emailContainer.classList.add('hidden');
+                passwordContainer.classList.remove('hidden');
                 confirmPasswordContainer.classList.add('hidden');
+                forgotPassBtn.classList.remove('hidden');
+
                 emailInput.required = false;
+                passwordInput.required = true;
                 confirmPasswordInput.required = false;
+                passLabel.innerText = "Password:";
+
                 btn.className = currentRole === 'customer' ? "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition" : "w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition";
-                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
+                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode('signup')" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
+
+            } else if (currentMode === 'forgot') {
+                title.innerText = "Reset Password";
+                sub.innerText = "Verify Mobile & OTP to set new password";
+                btn.innerText = "Send Reset OTP";
+
+                emailContainer.classList.add('hidden');
+                passwordContainer.classList.remove('hidden');
+                confirmPasswordContainer.classList.remove('hidden');
+                forgotPassBtn.classList.add('hidden');
+
+                emailInput.required = false;
+                passwordInput.required = true;
+                confirmPasswordInput.required = true;
+                passLabel.innerText = "New Password:";
+
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition";
+                toggleTxt.innerHTML = `Remembered Password? <a href="#" onclick="toggleMode('signin')" class="text-blue-600 font-bold hover:underline">Back to Sign In</a>`;
             }
         }
 
@@ -237,7 +284,7 @@
             let password = document.getElementById('password').value.trim();
             let savedUserJson = localStorage.getItem('gharkam_user_' + mobile);
 
-            if (isSignupMode) {
+            if (currentMode === 'signup') {
                 let confirmPassword = document.getElementById('confirmPassword').value.trim();
 
                 if (password !== confirmPassword) {
@@ -261,8 +308,7 @@
                 generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
                 sendEmailOTP(email, generatedOTP);
 
-            } else {
-                // Direct Login using Password
+            } else if (currentMode === 'signin') {
                 if (!savedUserJson) {
                     showStatus("Account सापडले नाही! कृपया आधी Sign Up करा.", "error");
                     return;
@@ -286,6 +332,25 @@
                 } else {
                     showStatus("❌ चुकीचा पासवर्ड! कृपया पुन्हा प्रयत्न करा.", "error");
                 }
+
+            } else if (currentMode === 'forgot') {
+                if (!savedUserJson) {
+                    showStatus("हा मोबाईल नंबर रजिस्टर नाही! कृपया आधी Sign Up करा.", "error");
+                    return;
+                }
+
+                let confirmPassword = document.getElementById('confirmPassword').value.trim();
+                if (password !== confirmPassword) {
+                    showStatus("❌ पासवर्ड जुळत नाहीत! कृपया दोन्ही पासवर्ड तपासा.", "error");
+                    return;
+                }
+
+                let savedUser = JSON.parse(savedUserJson);
+                pendingUserData = savedUser;
+                pendingUserData.newPassword = password; 
+
+                generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                sendEmailOTP(savedUser.email, generatedOTP);
             }
         }
 
@@ -313,6 +378,9 @@
                     document.getElementById('otpContainer').classList.remove('hidden');
                     btn.classList.add('hidden');
                     btn.disabled = false;
+                    
+                    // Resend Timer Start (30 Seconds)
+                    startResendTimer();
                 })
                 .catch((err) => {
                     console.error("EmailJS Error:", err);
@@ -322,8 +390,33 @@
                 });
         }
 
+        function startResendTimer() {
+            const resendBtn = document.getElementById('resendBtn');
+            let countdown = 30;
+            resendBtn.disabled = true;
+            resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if(resendTimer) clearInterval(resendTimer);
+
+            resendTimer = setInterval(() => {
+                countdown--;
+                resendBtn.innerText = `⏳ Resend OTP in ${countdown}s`;
+
+                if (countdown <= 0) {
+                    clearInterval(resendTimer);
+                    resendBtn.disabled = false;
+                    resendBtn.innerText = "🔄 Resend OTP";
+                    resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }, 1000);
+        }
+
         function resendOTP() {
-            let email = document.getElementById('email').value.trim();
+            let email = pendingUserData ? pendingUserData.email : document.getElementById('email').value.trim();
+            if(!email) {
+                showStatus("❌ ई-मेल सापडला नाही! कृपया ई-मेल तपासा.", "error");
+                return;
+            }
             generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
             sendEmailOTP(email, generatedOTP);
         }
@@ -338,10 +431,22 @@
                 verifyBtn.disabled = true;
                 verifyBtn.innerText = "Verifying...";
 
-                localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
-                localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
+                if (currentMode === 'signup') {
+                    localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                    localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
+                    showStatus("🎉 अकाऊंट यशस्वीरीत्या तयार झाले! Redirecting...", "success");
 
-                showStatus("🎉 अकाऊंट यशस्वीरीत्या तयार झाले! Redirecting...", "success");
+                } else if (currentMode === 'forgot') {
+                    pendingUserData.password = pendingUserData.newPassword;
+                    delete pendingUserData.newPassword;
+                    localStorage.setItem('gharkam_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                    showStatus("🎉 पासवर्ड यशस्वीरीत्या बदलला! आता लॉगिन करा.", "success");
+                    
+                    setTimeout(() => {
+                        toggleMode('signin');
+                    }, 1500);
+                    return;
+                }
 
                 setTimeout(() => {
                     if (currentRole === 'customer') {

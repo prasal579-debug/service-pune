@@ -1,141 +1,641 @@
 <!DOCTYPE html>
 <html lang="mr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Worker Dashboard - Pune Home Services</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: #f0f2f5; padding: 20px; }
-        .header { background: #fff; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto 20px auto; }
-        .duty-status { display: flex; align-items: center; gap: 10px; }
-        
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #28a745; }
-        input:checked + .slider:before { transform: translateX(24px); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gharmitra - Worker Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<!-- Chart.js for Earnings Graph -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .dashboard-container { max-width: 600px; margin: 0 auto; }
-        .status-banner { background: #e9ecef; color: #6c757d; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 20px; }
-        .status-banner.online { background: #d4edda; color: #155724; }
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
-        .order-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; display: none; }
-        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .service-badge { background: #007bff; color: white; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
-        .order-details p { margin: 6px 0; color: #444; font-size: 14px; }
-        .order-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin: 10px 0; border: 1px solid #ddd; }
-        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        .btn-accept { background: #28a745; color: white; }
-        .btn-reject { background: #dc3545; color: white; }
-        .btn-accept:hover { background: #218838; }
-        .btn-reject:hover { background: #c82333; }
-        #acceptAlert { display: none; background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
-    </style>
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<style>
+.card-3d {
+background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%);
+box-shadow: 0 20px 30px -10px rgba(30, 64, 175, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+transform: translateY(-2px);
+transition: all 0.3s ease;
+}
+.inner-3d-box {
+background: rgba(255, 255, 255, 0.95);
+box-shadow: inset 0 2px 4px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.1);
+backdrop-filter: blur(10px);
+}
+</style>
+
+<script>
+const firebaseConfig = {
+apiKey: "AIzaSyD7Y-2un6pfAY8rafRsAzMre-OvNBAkosU",
+authDomain: "gharkam-6c879.firebaseapp.com",
+databaseURL: "https://gharkam-6c879-default-rtdb.firebaseio.com",
+projectId: "gharkam-6c879",
+storageBucket: "gharkam-6c879.firebasestorage.app",
+messagingSenderId: "706729205935",
+appId: "1:706729205935:web:598569d60ad414765e345a"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const auth = firebase.auth();
+</script>
 </head>
-<body>
+<body class="bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-900 min-h-screen p-4 md:p-8 flex items-center justify-center font-sans">
 
-<div class="header">
-    <div>
-        <h3 style="margin: 0;">वर्कर डॅशबोर्ड</h3>
-        <small style="color: #666;">एरिया: <strong id="workerAreaName">Katraj</strong></small>
-    </div>
-    <div class="duty-status">
-        <span id="dutyLabel" style="font-size: 14px; font-weight: bold; color: #777;">Duty OFF</span>
-        <label class="switch">
-            <input type="checkbox" id="dutyToggle" onchange="toggleDuty()">
-            <span class="slider"></span>
-        </label>
-    </div>
+<div class="w-full max-w-5xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+<header class="bg-blue-600 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-md select-none">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 text-2xl font-black tracking-tight text-white">
+<span class="bg-white text-blue-600 p-2 rounded-xl text-lg flex items-center justify-center shadow-sm">🏠 GK</span>
+<span>GHARMITRA<span class="text-blue-200">.online</span></span>
+</div>
+<span class="hidden md:inline-block text-xs font-semibold bg-blue-700 text-blue-100 px-3 py-1 rounded-full border border-blue-500">
+Worker Dashboard
+</span>
+</div>
+<div class="flex items-center gap-3">
+<span id="headerDutyStatus" class="text-xs font-bold bg-white text-blue-700 border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+<span id="dutyDot" class="w-2 h-2 rounded-full bg-red-500"></span> <span id="dutyText">Duty OFF</span>
+</span>
+</div>
+</header>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
+<div class="lg:col-span-7 p-6 md:p-8 bg-white border-b lg:border-b-0 border-slate-200">
+<div class="card-3d p-6 rounded-3xl text-white mb-6 relative overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-4">
+<div class="space-y-1.5 w-full sm:w-auto text-left">
+<div class="flex items-center gap-2">
+<h2 class="font-black text-xl tracking-wide text-white">Gharmitra Worker Panel</h2>
+<span class="bg-emerald-400/20 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30">Verified Partner</span>
+</div>
+<p class="text-sm font-semibold text-blue-100 flex items-center gap-1.5">
+<i class="fa-solid fa-user-gear text-xs text-blue-300"></i> Worker: <span id="workerUsername" class="text-white font-bold underline decoration-blue-300 underline-offset-2">Loading...</span>
+</p>
+<p class="text-xs font-medium text-blue-200 tracking-wide flex items-center gap-2 flex-wrap">
+<span>ID: <strong id="workerID" class="text-white">GK-000000</strong></span>
+<span>|</span>
+<span class="flex items-center gap-1.5">
+Service: <strong id="workerService" class="text-white">Loading...</strong>
+<button onclick="openServiceModal()" class="bg-white/20 hover:bg-white/30 text-white text-[10px] px-2 py-0.5 rounded-md transition underline">Change</button>
+</span>
+</p>
+<div class="flex items-center gap-2 pt-1">
+<span class="bg-amber-400 text-slate-900 text-xs font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+<i class="fa-solid fa-star text-[10px]"></i> <span id="workerAvgRating">5.0</span>
+</span>
+<span class="text-xs text-blue-100 font-medium">(<span id="workerTotalReviews">0</span> Reviews)</span>
+</div>
 </div>
 
-<div class="dashboard-container">
-    <div class="status-banner" id="statusBanner">
-        तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.
-    </div>
+<div class="inner-3d-box p-4 rounded-2xl text-center min-w-[145px] w-full sm:w-auto text-slate-800">
+<span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">WALLET BALANCE</span>
+<span class="text-2xl font-black text-emerald-600 block my-1">₹<span id="walletAmount">50</span></span>
+<button onclick="payWithRazorpay()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1">
+<i class="fa-solid fa-plus text-[10px]"></i> Add Money
+</button>
+</div>
+</div>
 
-    <!-- Dynamic Order Card -->
-    <div class="order-card" id="orderCard">
-        <div class="order-header">
-            <span class="service-badge" id="ordService">Plumbing</span>
-            <span style="font-weight: bold; color: #28a745;">ऑफर: ₹<span id="ordPrice">0</span></span>
-        </div>
-        <div class="order-details">
-            <p><strong>लोकेशन:</strong> <span id="ordArea">Katraj</span></p>
-            <p><strong>वेळ:</strong> <span id="ordTime">--</span></p>
-            <p><strong>कामाचा फोटो:</strong></p>
-            <img id="ordImage" src="" alt="Work Photo" class="order-img">
-        </div>
-        <div class="action-btns" id="actionBtns">
-            <button class="btn btn-accept" onclick="acceptOrder()">Accept Order</button>
-            <button class="btn btn-reject" onclick="rejectOrder()">Reject</button>
-        </div>
-        <div id="acceptAlert">
-            ऑर्डर यशस्वीरित्या कन्फर्म झाली आहे! कस्टमरला मेसेज पाठवला गेला आहे.<br>
-            <strong>कस्टमर फोन: <span id="ordPhone">9876543210</span></strong>
-        </div>
-    </div>
+<!-- दैनिक कमाई आणि साप्ताहिक अहवाल बॉक्स (Earnings Box) -->
+<div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl mb-6 shadow-sm">
+<div class="flex justify-between items-center mb-3">
+<h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+<i class="fa-solid fa-chart-line text-blue-600"></i> आजची कमाई व साप्ताहिक अहवाल
+</h4>
+<span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+आज: ₹<span id="todayEarnings">0</span> (<span id="todayJobsCount">0</span> कामे)
+</span>
+</div>
+<!-- छोटा ग्राफ (Chart.js Canvas) -->
+<div class="w-full h-32">
+<canvas id="weeklyEarningsChart"></canvas>
+</div>
+</div>
+
+<div class="mb-4">
+<label class="block text-xs font-bold text-slate-700 mb-1.5">Select Working Area:</label>
+<select id="workingAreaSelect" onchange="filterAreaJobs()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 font-semibold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+    <option value="Swargate">Swargate</option>
+    <option value="Hadapsar">Hadapsar</option>
+    <option value="Katraj">Katraj</option>
+    <option value="Kothrud">Kothrud</option>
+    <option value="Baner">Baner</option>
+    <option value="Wakad">Wakad</option>
+    <option value="Hinjawadi">Hinjawadi</option>
+    <option value="Viman Nagar">Viman Nagar</option>
+    <option value="Kharadi">Kharadi</option>
+    <option value="Aundh">Aundh</option>
+    <option value="Shivajinagar">Shivajinagar</option>
+    <option value="Koregaon Park">Koregaon Park</option>
+    <option value="Kondhwa">Kondhwa</option>
+    <option value="Bibwewadi">Bibwewadi</option>
+    <option value="Dhankawadi">Dhankawadi</option>
+    <option value="Pimple Saudagar">Pimple Saudagar</option>
+    <option value="Pimpri">Pimpri</option>
+    <option value="Chinchwad">Chinchwad</option>
+    <option value="Yerawada">Yerawada</option>
+    <option value="Wagholi">Wagholi</option>
+    <option value="Dhanori">Dhanori</option>
+    <option value="Lohegaon">Lohegaon</option>
+    <option value="Camp">Camp</option>
+    <option value="Deccan">Deccan</option>
+    <option value="Sinhagad Road">Sinhagad Road</option>
+    <option value="Warje">Warje</option>
+    <option value="Bavdhan">Bavdhan</option>
+    <option value="NIBM">NIBM</option>
+    <option value="Vishrantwadi">Vishrantwadi</option>
+    <option value="Magarpatta">Magarpatta</option>
+</select>
+</div>
+
+<button id="dutyToggleBtn" onclick="toggleDuty()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6">
+🔴 Duty OFF (Click ON)
+</button>
+
+<hr class="border-slate-100 mb-6">
+
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+<i class="fa-solid fa-briefcase text-blue-600"></i> Available Jobs
+</h3>
+<span id="jobCount" class="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold px-3 py-1 rounded-full">
+0 New Jobs
+</span>
+</div>
+
+<div id="availableJobsContainer" class="space-y-4 max-h-[450px] overflow-y-auto pr-1"></div>
+</div>
+
+<div class="lg:col-span-5 bg-slate-50 p-6 md:p-8 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+<i class="fa-solid fa-circle-check text-emerald-600"></i> My Active Task
+</h3>
+<div id="acceptedJobsContainer">
+<p class="text-slate-400 text-xs text-center py-8">तुम्ही अद्याप कोणतेही काम स्वीकारलेले नाही.</p>
+</div>
+</div>
+
+<div class="mt-8 bg-white p-5 rounded-2xl border border-blue-100 shadow-sm">
+<h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2">
+<i class="fa-solid fa-headset text-blue-600"></i> Worker Support Helpline
+</h4>
+<p class="text-xs text-slate-500 mb-4">कामाबाबत काही अडचण असल्यास सपोर्ट टीमशी बोला.</p>
+<div class="grid grid-cols-2 gap-3">
+<a href="tel:7875160724" class="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 px-3 rounded-xl transition">
+<i class="fa-solid fa-phone text-blue-600"></i> Call Support
+</a>
+<a href="https://wa.me/917875160724?text=Hello%20Gharmitra%20Worker%20Support," target="_blank" class="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-sm transition">
+<i class="fa-brands fa-whatsapp text-white text-sm"></i> WhatsApp
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Service Change Modal -->
+<div id="serviceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative">
+<button onclick="closeServiceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-lg font-bold w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">✕</button>
+<h3 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-tools text-blue-600"></i> तुमची सर्विस बदला</h3>
+<select id="newServiceSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-800 font-semibold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm mb-4">
+    <option value="Plumbing">Plumbing (प्लंबिंग काम)</option>
+    <option value="Electrician">Electrician (इलेक्ट्रिक काम)</option>
+    <option value="Carpenter">Carpenter (सुतारकाम)</option>
+    <option value="Painting">Painting (रंगकाम)</option>
+    <option value="Cleaning">Cleaning (घर स्वच्छता)</option>
+    <option value="AC Repair">AC Repair (एसी रिपेयर)</option>
+    <option value="Appliance Repair">Appliance Repair (उपकरण दुरुस्ती)</option>
+    <option value="Masonry">Masonry (बांधकाम/गिलावा)</option>
+    <option value="Locksmith">Locksmith (कुलूप दुरुस्ती)</option>
+    <option value="Pest Control">Pest Control (कीटक नियंत्रण)</option>
+    <option value="Gardening">Gardening (बागकाम)</option>
+    <option value="Glass & Aluminium">Glass & Aluminium (काच व ॲल्युमिनियम)</option>
+    <option value="TV & DTH">TV & DTH (टीव्ही आणि डीटीएच)</option>
+    <option value="Moving & Shifting">Moving & Shifting (सामान स्थलांतर)</option>
+    <option value="Bathroom Services">Bathroom Services (बाथरूम सेवा)</option>
+</select>
+<button onclick="updateWorkerService()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md">
+    Service अपडेट करा
+</button>
+</div>
+</div>
+
+<!-- Chat Modal -->
+<div id="chatModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-100 flex flex-col h-[450px]">
+<div class="flex justify-between items-center border-b pb-3 mb-3">
+<h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+<i class="fa-solid fa-comments text-blue-600"></i> Customer Chat (<span id="chatCustomerName">Client</span>)
+</h3>
+<button onclick="closeChatModal()" class="text-slate-400 hover:text-slate-700 font-bold text-base">✕</button>
+</div>
+<div id="chatMessagesContainer" class="flex-1 overflow-y-auto space-y-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+<p class="text-center text-slate-400 py-4">मेसेज लोड होत आहेत...</p>
+</div>
+<div class="mt-3 flex gap-2">
+<input type="text" id="chatInputMsg" placeholder="मेसेज लिहा..." class="flex-1 bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+<button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">पाठवा</button>
+</div>
+</div>
+</div>
+
+<!-- Image Preview Modal -->
+<div id="imagePreviewModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" onclick="closeImagePreview()">
+  <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+    <button onclick="closeImagePreview()" class="absolute -top-12 right-0 text-white hover:text-slate-300 text-2xl font-bold bg-white/20 hover:bg-white/40 w-10 h-10 rounded-full flex items-center justify-center transition">✕</button>
+    <img id="previewModalImg" src="" alt="Full Preview" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20">
+    <p class="text-white/70 text-xs mt-3 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> बंद करण्यासाठी बाहेर क्लिक करा</p>
+  </div>
 </div>
 
 <script>
-    function toggleDuty() {
-        const isChecked = document.getElementById('dutyToggle').checked;
-        const dutyLabel = document.getElementById('dutyLabel');
-        const statusBanner = document.getElementById('statusBanner');
-        const orderCard = document.getElementById('orderCard');
+let isDutyOn = false;
+let allOrdersData = null;
+let currentWorkerUid = null;
+let currentWorkerService = "Electrician";
+let activeChatOrderId = null;
+let locationWatchId = null;
+let earningsChartInstance = null;
 
-        if (isChecked) {
-            dutyLabel.innerText = "Duty ON";
-            dutyLabel.style.color = "#28a745";
-            statusBanner.innerText = "तुम्ही सध्या ONLINE आहात. नवीन ऑर्डर्स शोधत आहे...";
-            statusBanner.classList.add('online');
-            
-            checkForOrders();
-        } else {
-            dutyLabel.innerText = "Duty OFF";
-            dutyLabel.style.color = "#777";
-            statusBanner.innerText = "तुम्ही सध्या OFF-DUTY आहात. ऑर्डर्स मिळवण्यासाठी Duty ON करा.";
-            statusBanner.classList.remove('online');
-            orderCard.style.display = 'none';
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        currentWorkerUid = user.uid;
+        const emailPrefix = user.email ? user.email.split('@')[0] : "Worker";
+        document.getElementById('workerUsername').innerText = emailPrefix;
+
+        const workerRef = database.ref('workers/' + user.uid);
+
+        let dataLoaded = false;
+
+        workerRef.once('value').then((snapshot) => {
+            dataLoaded = true;
+            if (snapshot.exists()) {
+                updateWorkerUI(snapshot.val());
+            } else {
+                const counterRef = database.ref('system/totalWorkersCount');
+                counterRef.transaction((currentCount) => {
+                    return (currentCount || 0) + 1;
+                }, (error, committed, snapshotVal) => {
+                    const newIndex = committed ? snapshotVal.val() : Math.floor(Math.random() * 1000) + 1;
+                    const newWorkerData = {
+                        workerIndex: newIndex,
+                        service: "Electrician",
+                        wallet: 50,
+                        rating: 5.0,
+                        totalReviews: 0,
+                        email: user.email || ""
+                    };
+                    workerRef.set(newWorkerData).then(() => {
+                        updateWorkerUI(newWorkerData);
+                    });
+                });
+            }
+        });
+
+        setTimeout(() => {
+            if (!dataLoaded) {
+                updateWorkerUI({ workerIndex: 1, service: "Electrician", wallet: 50, rating: 5.0, totalReviews: 0 });
+            }
+        }, 3000);
+
+        workerRef.on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                updateWorkerUI(snapshot.val());
+            }
+        });
+
+        loadWorkerEarnings(user.uid);
+    } else {
+        currentWorkerUid = null;
+        document.getElementById('workerUsername').innerText = "Guest Worker";
+        document.getElementById('workerID').innerText = "GK-000000";
+        renderJobs();
+    }
+});
+
+function updateWorkerUI(data) {
+    const workerNum = data.workerIndex || 1;
+    document.getElementById('workerID').innerText = 'GK-' + String(workerNum).padStart(6, '0');
+    currentWorkerService = data.service || "Electrician";
+    document.getElementById('workerService').innerText = currentWorkerService;
+
+    if(data.wallet !== undefined) document.getElementById('walletAmount').innerText = data.wallet;
+    if(data.rating !== undefined) document.getElementById('workerAvgRating').innerText = Number(data.rating).toFixed(1);
+    if(data.totalReviews !== undefined) document.getElementById('workerTotalReviews').innerText = data.totalReviews;
+    
+    renderJobs();
+}
+
+function loadWorkerEarnings(workerUid) {
+    database.ref('orders').orderByChild('workerUid').equalTo(workerUid).on('value', (snapshot) => {
+        const orders = snapshot.val();
+        let todaySum = 0;
+        let todayCount = 0;
+        let weeklyData = [0, 0, 0, 0, 0, 0, 0]; 
+        
+        const todayStr = new Date().toLocaleDateString();
+
+        if (orders) {
+            Object.values(orders).forEach(order => {
+                if (order.status === 'Completed') {
+                    const amount = parseInt(order.budget ? order.budget.replace(/[^0-9]/g, '') : '500') || 500;
+                    if (order.date === todayStr) {
+                        todaySum += amount;
+                        todayCount++;
+                    }
+                    let dayIndex = new Date(order.timestamp || Date.now()).getDay(); 
+                    weeklyData[dayIndex] += amount;
+                }
+            });
         }
-    }
 
-    function checkForOrders() {
-        const savedOrder = localStorage.getItem('gharkam_active_order');
-        const orderCard = document.getElementById('orderCard');
+        document.getElementById('todayEarnings').innerText = todaySum;
+        document.getElementById('todayJobsCount').innerText = todayCount;
 
-        if (savedOrder) {
-            const orderData = JSON.parse(savedOrder);
-            
-            document.getElementById('ordService').innerText = orderData.serviceType;
-            document.getElementById('ordPrice').innerText = orderData.price;
-            document.getElementById('ordArea').innerText = orderData.area;
-            document.getElementById('ordTime').innerText = orderData.timeSlot;
-            document.getElementById('ordImage').src = orderData.photo;
-            document.getElementById('ordPhone').innerText = orderData.customerPhone || "9876543210";
-            document.getElementById('workerAreaName').innerText = orderData.area;
+        renderEarningsChart(weeklyData);
+    });
+}
 
-            setTimeout(() => {
-                orderCard.style.display = 'block';
-            }, 1000);
-        } else {
-            document.getElementById('statusBanner').innerText = "तुम्ही सध्या ONLINE आहात. सध्या नवीन कोणतीही ऑर्डर उपलब्ध नाही.";
+function renderEarningsChart(dataVals) {
+    const ctx = document.getElementById('weeklyEarningsChart').getContext('2d');
+    if (earningsChartInstance) earningsChartInstance.destroy();
+
+    earningsChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि', 'रव'],
+            datasets: [{
+                label: 'कमाई (₹)',
+                data: dataVals,
+                backgroundColor: '#3b82f6',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { display: false } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
         }
-    }
+    });
+}
 
-    function acceptOrder() {
-        document.getElementById('actionBtns').style.display = 'none';
-        document.getElementById('acceptAlert').style.display = 'block';
+function startLiveLocationTracking(orderId) {
+    if ("geolocation" in navigator) {
+        locationWatchId = navigator.geolocation.watchPosition((position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            database.ref('orders/' + orderId + '/workerLocation').set({
+                lat: lat,
+                lng: lng,
+                updatedAt: Date.now()
+            });
+        }, (error) => {
+            console.error("Location error: ", error.message);
+        }, {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+        });
+    } else {
+        alert("तुमच्या ब्राउझरमध्ये जीपीएस लोकेशन सपोर्ट उपलब्ध नाही.");
     }
+}
 
-    function rejectOrder() {
-        document.getElementById('orderCard').style.display = 'none';
-        localStorage.removeItem('gharkam_active_order');
-        alert('ऑर्डर रिजेक्ट केली आहे.');
+function stopLiveLocationTracking() {
+    if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
     }
+}
+
+function openServiceModal() { document.getElementById('serviceModal').classList.remove('hidden'); }
+function closeServiceModal() { document.getElementById('serviceModal').classList.add('hidden'); }
+
+function updateWorkerService() {
+    const newService = document.getElementById('newServiceSelect').value;
+    const user = auth.currentUser;
+    if (user) {
+        database.ref('workers/' + user.uid).update({ service: newService }).then(() => {
+            alert("तुमची सर्विस यशस्वीरीत्या बदलण्यात आली आहे!");
+            closeServiceModal();
+        });
+    }
+}
+
+function payWithRazorpay() {
+    let amountToAdd = 100;
+    var options = {
+        "key": "rzp_test_TZF48VPVnZ9JH2",
+        "amount": amountToAdd * 100, 
+        "currency": "INR",
+        "name": "Gharmitra Online",
+        "description": "Worker Wallet Recharge",
+        "handler": function (response){
+            alert("पेमेंट यशस्वी! पेमेंट आयडी: " + response.razorpay_payment_id);
+            addMoneyToFirebaseWallet(amountToAdd);
+        },
+        "theme": { "color": "#2563eb" }
+    };
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+}
+
+function addMoneyToFirebaseWallet(amount) {
+    const user = auth.currentUser;
+    if (user) {
+        database.ref('workers/' + user.uid + '/wallet').transaction(currentBalance => (currentBalance || 50) + amount);
+    }
+}
+
+function openChatModal(orderId, customerName) {
+    activeChatOrderId = orderId;
+    document.getElementById('chatCustomerName').innerText = customerName;
+    document.getElementById('chatModal').classList.remove('hidden');
+    database.ref('orders/' + orderId + '/chats').on('value', (snapshot) => {
+        const chatBox = document.getElementById('chatMessagesContainer');
+        chatBox.innerHTML = "";
+        const msgs = snapshot.val();
+        if(msgs) {
+            Object.values(msgs).forEach(msg => {
+                const isMe = msg.sender === 'worker';
+                chatBox.innerHTML += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[75%] p-2 rounded-xl ${isMe ? 'bg-blue-600 text-white' : 'bg-white border text-slate-800'}">
+                        <p>${msg.text}</p>
+                    </div>
+                </div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+            chatBox.innerHTML = '<p class="text-center text-slate-400 py-4">अद्याप कोणताही मेसेज नाही.</p>';
+        }
+    });
+}
+
+function closeChatModal() {
+    document.getElementById('chatModal').classList.add('hidden');
+    activeChatOrderId = null;
+}
+
+function sendChatMessage() {
+    const txt = document.getElementById('chatInputMsg').value.trim();
+    if(!txt || !activeChatOrderId) return;
+    database.ref('orders/' + activeChatOrderId + '/chats').push({
+        sender: 'worker', text: txt, timestamp: Date.now()
+    }).then(() => { document.getElementById('chatInputMsg').value = ""; });
+}
+
+function openImagePreview(url) {
+  document.getElementById('previewModalImg').src = url;
+  document.getElementById('imagePreviewModal').classList.remove('hidden');
+}
+function closeImagePreview() {
+  document.getElementById('imagePreviewModal').classList.add('hidden');
+  document.getElementById('previewModalImg').src = "";
+}
+
+function toggleDuty() {
+isDutyOn = !isDutyOn;
+const btn = document.getElementById('dutyToggleBtn');
+const headerDot = document.getElementById('dutyDot');
+const headerText = document.getElementById('dutyText');
+
+if (isDutyOn) {
+btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
+btn.innerHTML = "🟢 Duty ON (Click OFF)";
+headerDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+headerText.innerText = "Duty ON";
+} else {
+btn.className = "w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
+btn.innerHTML = "🔴 Duty OFF (Click ON)";
+headerDot.className = "w-2 h-2 rounded-full bg-red-500";
+headerText.innerText = "Duty OFF";
+}
+renderJobs();
+}
+
+function filterAreaJobs() { renderJobs(); }
+
+database.ref("orders").on("value", (snapshot) => {
+allOrdersData = snapshot.val();
+renderJobs();
+});
+
+function renderJobs() {
+const jobsContainer = document.getElementById('availableJobsContainer');
+const acceptedContainer = document.getElementById('acceptedJobsContainer');
+const jobCountBadge = document.getElementById('jobCount');
+const selectedArea = document.getElementById('workingAreaSelect').value;
+
+acceptedContainer.innerHTML = "";
+
+if (!isDutyOn) {
+jobsContainer.innerHTML = `<div class="text-center py-10"><span class="text-5xl block mb-3">😴</span><p class="font-bold text-slate-700 text-sm">तुम्ही सध्या Duty OFF वर आहात</p></div>`;
+jobCountBadge.innerText = "0 New Jobs";
+return;
+}
+
+if (!allOrdersData) {
+jobsContainer.innerHTML = '<p class="text-slate-400 text-xs text-center py-10">सध्या एकही काम उपलब्ध नाही...</p>';
+jobCountBadge.innerText = "0 New Jobs";
+return;
+}
+
+jobsContainer.innerHTML = "";
+const keys = Object.keys(allOrdersData).reverse();
+let pendingCount = 0;
+let activeTaskFound = false;
+
+keys.forEach(key => {
+const item = allOrdersData[key];
+const imgUrl = item.photoUrl || item.imageUrl || item.photo || item.image || null;
+const isAreaMatch = (item.area === selectedArea || !item.area);
+const isServiceMatch = (item.service && item.service.toLowerCase() === currentWorkerService.toLowerCase());
+
+if (item.status === 'Pending' && isAreaMatch && isServiceMatch) {
+pendingCount++;
+const jobCard = document.createElement('div');
+jobCard.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl hover:border-blue-400 transition shadow-sm space-y-3";
+const photoHtml = imgUrl ? `<div class="my-2"><div class="relative cursor-pointer group rounded-xl overflow-hidden border border-slate-200" onclick="openImagePreview('${imgUrl}')"><img src="${imgUrl}" class="w-full h-44 object-cover"></div></div>` : '';
+
+jobCard.innerHTML = `
+<div class="flex justify-between items-start">
+<div><span class="bg-blue-100 text-blue-700 text-[11px] font-bold px-2.5 py-1 rounded-full">⚡ ${item.service}</span><h4 class="font-bold text-slate-800 text-sm mt-2"><i class="fa-solid fa-user text-blue-600"></i> ${item.customerName}</h4></div>
+<span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">${item.budget || '₹500'}</span>
+</div>
+<div class="text-xs text-slate-600 space-y-1 bg-white p-3 rounded-xl border border-slate-100">
+<p><i class="fa-solid fa-location-dot text-red-500 mr-1.5"></i><strong>पत्ता:</strong> ${item.address}</p>
+<p><i class="fa-solid fa-phone text-emerald-500 mr-1.5"></i><strong>संपर्क:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold">${item.customerMobile}</a></p>
+</div>
+${photoHtml}
+<div class="grid grid-cols-2 gap-2">
+<button onclick="acceptOrder('${key}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">🤝 Accept Order</button>
+<a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
+</div>`;
+jobsContainer.appendChild(jobCard);
+}
+
+if ((item.status === 'Accepted' || item.status === 'On The Way') && !activeTaskFound && item.workerUid === currentWorkerUid) {
+activeTaskFound = true;
+const activeCard = document.createElement('div');
+activeCard.className = "bg-white p-5 rounded-2xl border border-emerald-200 shadow-md space-y-4";
+activeCard.innerHTML = `
+<div class="flex justify-between items-center border-b pb-3 border-slate-100">
+<span class="font-bold text-slate-800 text-xs">🛠️ Active Task In-Progress</span>
+<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">${item.status}</span>
+</div>
+<div class="bg-blue-50/70 p-3.5 rounded-xl border border-blue-100 text-xs space-y-1.5 text-slate-700">
+<p><strong>ग्राहक:</strong> ${item.customerName}</p>
+<p><strong>सेवा:</strong> ${item.service}</p>
+<p><strong>मोबाइल:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold underline">${item.customerMobile}</a></p>
+<p><strong>पत्ता:</strong> ${item.address}</p>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
+<button onclick="openChatModal('${key}', '${item.customerName}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">💬 Chat</button>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button onclick="updateStatus('${key}', 'On The Way')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">🚗 On The Way</button>
+<button onclick="updateStatus('${key}', 'Completed')" class="dev bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">✓ Completed</button>
+</div>`;
+acceptedContainer.appendChild(activeCard);
+}
+});
+jobCountBadge.innerText = `${pendingCount} New Jobs`;
+}
+
+function acceptOrder(orderId) {
+    if (!currentWorkerUid) {
+        alert("कृपया आधी लॉग इन करा!");
+        return;
+    }
+    database.ref("orders/" + orderId).update({
+        status: "Accepted", workerUid: currentWorkerUid
+    }).then(() => alert("तुम्ही हे काम यशस्वीरीत्या स्वीकारले आहे!"));
+}
+
+function updateStatus(orderId, newStatus) {
+    database.ref("orders/" + orderId).update({ status: newStatus }).then(() => {
+        alert("स्टेटस अपडेट केले: " + newStatus);
+        if (newStatus === 'On The Way') {
+            startLiveLocationTracking(orderId); 
+        } else if (newStatus === 'Completed') {
+            stopLiveLocationTracking(); 
+        }
+    });
+}
 </script>
-
 </body>
 </html>

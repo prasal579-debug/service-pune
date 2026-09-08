@@ -56,6 +56,12 @@
 
             <form id="authForm" onsubmit="handleSubmit(event)" class="space-y-4">
                 
+                <!-- Full Name Field (Added) -->
+                <div id="fullNameContainer">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Full Name:</label>
+                    <input type="text" id="fullName" placeholder="Enter full name" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Mobile Number:</label>
                     <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -88,7 +94,7 @@
                         <option value="Glass & Aluminium">🪟 Glass & Aluminium</option>
                         <option value="TV & DTH">📺 TV & DTH</option>
                         <option value="Moving & Shifting">📦 Moving & Shifting</option>
-                        <option value="Bathroom Services">🚿 Bathroom Services</option>
+                        <option value="Bathroom Services">Shower Bathroom Services</option>
                     </select>
                 </div>
 
@@ -179,6 +185,8 @@
             const btn = document.getElementById('submitBtn');
             const toggleTxt = document.getElementById('toggleText');
             const workTypeContainer = document.getElementById('workTypeContainer');
+            const fullNameContainer = document.getElementById('fullNameContainer');
+            const fullNameInput = document.getElementById('fullName');
             const emailContainer = document.getElementById('emailContainer');
             const emailInput = document.getElementById('email');
             const passwordContainer = document.getElementById('passwordContainer');
@@ -197,6 +205,8 @@
                 title.innerText = roleName + " Signup";
                 sub.innerText = "Create account using Email OTP & Password";
                 btn.innerText = "Send OTP & Verify";
+                fullNameContainer.classList.remove('hidden');
+                fullNameInput.required = true;
                 emailContainer.classList.remove('hidden');
                 emailInput.required = true;
                 passwordContainer.classList.remove('hidden');
@@ -208,6 +218,8 @@
                 title.innerText = roleName + " Sign In";
                 sub.innerText = "Enter Mobile & Password to Sign In";
                 btn.innerText = "Sign In";
+                fullNameContainer.classList.add('hidden');
+                fullNameInput.required = false;
                 emailContainer.classList.add('hidden'); 
                 emailInput.required = false;
                 passwordContainer.classList.remove('hidden');
@@ -250,6 +262,7 @@
 
             document.getElementById('formTitle').innerText = "Reset Password";
             document.getElementById('formSub').innerText = "OTP will be sent to: " + savedUser.email;
+            document.getElementById('fullNameContainer').classList.add('hidden');
             document.getElementById('email').value = savedUser.email;
             document.getElementById('emailContainer').classList.remove('hidden');
             document.getElementById('email').readOnly = true;
@@ -343,7 +356,13 @@
             let savedUserJson = localStorage.getItem('gharmitra_user_' + mobile) || localStorage.getItem('gharkam_user_' + mobile);
 
             if (isSignupMode) {
+                let fullName = document.getElementById('fullName').value.trim();
                 let email = document.getElementById('email').value.trim().toLowerCase();
+
+                if (!fullName) {
+                    showStatus("Krupaya purna nav taka!", "error");
+                    return;
+                }
 
                 if (savedUserJson) {
                     showStatus("Ha mobile number registered ahe! Direct Sign In kara.", "error");
@@ -353,7 +372,7 @@
                 let selectedWorkType = (currentRole === 'worker') ? document.getElementById('workType').value : null;
 
                 pendingUserData = { 
-                    mobile, email, password, role: currentRole, balance: 50, 
+                    fullName, mobile, email, password, role: currentRole, balance: 50, 
                     workType: selectedWorkType 
                 };
 

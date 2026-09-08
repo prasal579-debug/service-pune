@@ -496,8 +496,80 @@
         let generatedOTP = null;
         let pendingUserData = null;
         let resetPasswordMobile = null;
+        let resetPasswordRole = null;
 
         const otpDigitInputs = Array.from(document.querySelectorAll('.otp-digit'));
+
+        /*
+         * Keep customer and worker accounts in separate namespaces.
+         *
+         * Older versions stored every account under gharmitra_user_<mobile>
+         * and then changed the role during sign in. That allowed a customer
+         * record to be opened from the Worker tab. The role is now part of
+         * the storage key and the stored role is always validated as well.
+         */
+        function roleStorageKey(role, mobile) {
+            const safeRole = role === 'worker' ? 'worker' : 'customer';
+            return 'gharmitra_user_' + safeRole + '_' + mobile;
+        }
+
+        function saveUserForRole(role, user) {
+            const serializedUser = JSON.stringify({ ...user, role });
+
+            // Canonical role-scoped record used by this page.
+            localStorage.setItem(roleStorageKey(role, user.mobile), serializedUser);
+
+            // Keep the old role-specific key so existing customer.html and
+            // worker.html pages can continue reading their own records.
+            const legacyRoleKey = role === 'worker' ? 'gharkam_user_' : 'gharmitra_user_';
+            localStorage.setItem(legacyRoleKey + user.mobile, serializedUser);
+        }
+
+        function readUserFromStorage(key, role) {
+            const rawUser = localStorage.getItem(key);
+            if (!rawUser) return null;
+
+            try {
+                const user = JSON.parse(rawUser);
+                return user && user.role === role ? user : null;
+            } catch (error) {
+                console.error('Invalid saved account data:', error);
+                return null;
+            }
+        }
+
+        function getUserForRole(role, mobile) {
+            const canonicalKey = roleStorageKey(role, mobile);
+            const roleSpecificLegacyKey = role === 'worker'
+                ? 'gharkam_user_' + mobile
+                : 'gharmitra_user_' + mobile;
+
+            // The final two keys support accounts created by the old build,
+            // but only when the saved role exactly matches the selected tab.
+            const keysToCheck = [
+                canonicalKey,
+                roleSpecificLegacyKey,
+                'gharmitra_user_' + mobile,
+                'gharkam_user_' + mobile
+            ];
+            const checkedKeys = new Set();
+
+            for (const key of keysToCheck) {
+                if (checkedKeys.has(key)) continue;
+                checkedKeys.add(key);
+
+                const user = readUserFromStorage(key, role);
+                if (user) {
+                    // Migrate a valid old record into the canonical namespace.
+                    if (key !== canonicalKey) {
+                        localStorage.setItem(canonicalKey, JSON.stringify(user));
+                    }
+                    return user;
+                }
+            }
+
+            return null;
+        }
 
         function syncOtpValue() {
             document.getElementById('otpInput').value = otpDigitInputs.map(input => input.value).join('');
@@ -719,14 +791,14 @@
                 return;
             }
 
-            let savedUserJson = localStorage.getItem('gharmitra_user_' + mobile) || localStorage.getItem('gharkam_user_' + mobile);
-            if (!savedUserJson) {
+            let savedUser = getUserForRole(currentRole, mobile);
+            if (!savedUser) {
                 showStatus("❌ Ha mobile number registered nahi ahe! Adhi Signup kara.", "error");
                 return;
             }
 
-            let savedUser = JSON.parse(savedUserJson);
             resetPasswordMobile = mobile;
+            resetPasswordRole = currentRole;
             isForgotPasswordMode = true;
 
             document.getElementById('formTitle').innerText = "Reset Password";
@@ -799,11 +871,10 @@
                 return;
             }
 
-            let savedUserJson = localStorage.getItem('gharmitra_user_' + resetPasswordMobile) || localStorage.getItem('gharkam_user_' + resetPasswordMobile);
-            if (savedUserJson) {
-                let savedUser = JSON.parse(savedUserJson);
+            let savedUser = getUserForRole(resetPasswordRole, resetPasswordMobile);
+            if (savedUser) {
                 savedUser.password = newPass;
-                localStorage.setItem('gharmitra_user_' + resetPasswordMobile, JSON.stringify(savedUser));
+                saveUserForRole(resetPasswordRole, savedUser);
 
                 showStatus("🎉 Password successfully changed! Now Sign In.", "success");
                 
@@ -823,7 +894,7 @@
 
             let mobile = document.getElementById('mobile').value.trim();
             let password = document.getElementById('password').value.trim();
-            let savedUserJson = localStorage.getItem('gharmitra_user_' + mobile) || localStorage.getItem('gharkam_user_' + mobile);
+            let savedUser = getUserForRole(currentRole, mobile);
 
             if (isSignupMode) {
                 let fullName = document.getElementById('fullName').value.trim();
@@ -834,7 +905,7 @@
                     return;
                 }
 
-                if (savedUserJson) {
+                if (savedUser) {
                     showStatus("Ha mobile number registered ahe! Direct Sign In kara.", "error");
                     return;
                 }
@@ -850,19 +921,16 @@
                 sendEmailOTP(email, generatedOTP);
 
             } else {
-                if (!savedUserJson) {
+                if (!savedUser) {
                     showStatus("Your account is not available, please first signup.", "error");
                     return;
                 }
-
-                let savedUser = JSON.parse(savedUserJson);
 
                 if (savedUser.password !== password) {
                     showStatus("❌ चुकीचा Password! Krupaya बरोबर पासवर्ड टाका.", "error");
                     return;
                 }
 
-                savedUser.role = currentRole;
                 localStorage.setItem('current_user_session', JSON.stringify(savedUser));
 
                 showStatus("🎉 Login Successful! Redirecting...", "success");
@@ -917,7 +985,7 @@
             if (userEnteredOTP === generatedOTP) {
                 showStatus("⏳ OTP verify hot ahe...", "info");
                 animateOtpVerification(() => {
-                    localStorage.setItem('gharmitra_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                    saveUserForRole(pendingUserData.role, pendingUserData);
                     localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
 
                     showStatus("🎉 Signup Successful! Redirecting...", "success");

@@ -29,6 +29,145 @@ background: rgba(255, 255, 255, 0.95);
 box-shadow: inset 0 2px 4px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.1);
 backdrop-filter: blur(10px);
 }
+
+:root {
+  --worker-blue: #67e8f9;
+  --worker-violet: #8b7cff;
+  --worker-ink: #17213c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(88, 222, 255, .36), transparent 26%),
+    radial-gradient(circle at 92% 88%, rgba(170, 126, 255, .38), transparent 28%),
+    linear-gradient(135deg, #101943 0%, #214d98 48%, #34266f 100%) !important;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  width: 23rem;
+  height: 23rem;
+  border-radius: 42% 58% 63% 37% / 42% 34% 66% 58%;
+  opacity: .54;
+  pointer-events: none;
+  animation: workerLiquid 15s ease-in-out infinite alternate;
+}
+
+body::before {
+  left: -9rem;
+  top: 16%;
+  background: linear-gradient(135deg, rgba(99, 232, 249, .7), rgba(76, 112, 255, .16));
+}
+
+body::after {
+  right: -8rem;
+  bottom: 2%;
+  background: linear-gradient(135deg, rgba(201, 137, 255, .52), rgba(75, 218, 255, .18));
+  animation-delay: -6s;
+}
+
+@keyframes workerLiquid {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(2rem, -1.5rem, 0) rotate(18deg) scale(1.12); }
+}
+
+body > div:first-of-type {
+  background: linear-gradient(145deg, rgba(255,255,255,.8), rgba(255,255,255,.5)) !important;
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  border-color: rgba(255,255,255,.7) !important;
+  box-shadow: 0 32px 90px rgba(4, 14, 51, .34), inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+body > div:first-of-type > header {
+  background: linear-gradient(110deg, rgba(25, 55, 134, .94), rgba(67, 73, 167, .82)) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(18, 35, 91, .2) !important;
+}
+
+body > div:first-of-type > header > div:first-child span:first-child {
+  background: linear-gradient(145deg, #fff, #d9f8ff) !important;
+  box-shadow: 0 8px 20px rgba(4, 23, 80, .2), inset 0 1px 0 #fff;
+}
+
+body > div:first-of-type > div > div:first-child {
+  background: rgba(255,255,255,.42) !important;
+}
+
+body > div:first-of-type > div > div:last-child {
+  background: rgba(226, 237, 255, .42) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.card-3d {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(125deg, rgba(41, 100, 218, .9), rgba(109, 76, 210, .76)) !important;
+  border: 1px solid rgba(255,255,255,.32);
+  box-shadow: 0 24px 48px rgba(31, 55, 145, .3), inset 0 1px 0 rgba(255,255,255,.26) !important;
+  transform: none;
+}
+
+.card-3d::after {
+  content: "";
+  position: absolute;
+  width: 18rem;
+  height: 18rem;
+  right: -8rem;
+  top: -10rem;
+  border-radius: 50%;
+  background: rgba(112, 231, 255, .28);
+  filter: blur(2px);
+  z-index: -1;
+}
+
+.inner-3d-box {
+  background: rgba(255,255,255,.7) !important;
+  border: 1px solid rgba(255,255,255,.7);
+  box-shadow: 0 12px 25px rgba(17, 44, 117, .16), inset 0 1px 0 #fff;
+}
+
+#workingAreaSelect,
+#newServiceSelect,
+#dutyToggleBtn {
+  box-shadow: inset 0 1px 2px rgba(25, 46, 97, .06);
+}
+
+#workingAreaSelect:focus,
+#newServiceSelect:focus {
+  box-shadow: 0 0 0 4px rgba(91, 140, 255, .14);
+}
+
+#dutyToggleBtn {
+  box-shadow: 0 12px 24px rgba(35, 82, 190, .2), inset 0 1px 0 rgba(255,255,255,.22);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+#dutyToggleBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(35, 82, 190, .26), inset 0 1px 0 rgba(255,255,255,.3);
+}
+
+@media (max-width: 640px) {
+  body { padding: .75rem !important; }
+  body > div:first-of-type { border-radius: 1.5rem !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 </style>
 
 <script>

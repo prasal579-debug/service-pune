@@ -102,7 +102,7 @@ Service: <strong id="workerService" class="text-white">Loading...</strong>
 </div>
 </div>
 
-<!-- दैनिक कमाई आणि साप्ताहिक अहवाल बॉक्स (Earnings Box) -->
+<!-- दैनिक कमाई आणि साप्ताहिक अहवाल बॉक्स -->
 <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl mb-6 shadow-sm">
 <div class="flex justify-between items-center mb-3">
 <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
@@ -112,7 +112,6 @@ Service: <strong id="workerService" class="text-white">Loading...</strong>
 आज: ₹<span id="todayEarnings">0</span> (<span id="todayJobsCount">0</span> कामे)
 </span>
 </div>
-<!-- छोटा ग्राफ (Chart.js Canvas) -->
 <div class="w-full h-32">
 <canvas id="weeklyEarningsChart"></canvas>
 </div>
@@ -260,7 +259,7 @@ Service: <strong id="workerService" class="text-white">Loading...</strong>
 let isDutyOn = false;
 let allOrdersData = null;
 let currentWorkerUid = null;
-let currentWorkerService = "Electrician";
+let currentWorkerService = ""; 
 let activeChatOrderId = null;
 let locationWatchId = null;
 let earningsChartInstance = null;
@@ -269,28 +268,28 @@ auth.onAuthStateChanged((user) => {
     if (user) {
         currentWorkerUid = user.uid;
         
-        // 1. First Check 'users/' path for signup data (Prathamesh Rasal, etc.)
         const userRef = database.ref('users/' + user.uid);
         const workerRef = database.ref('workers/' + user.uid);
 
         userRef.on('value', (userSnap) => {
             let userData = userSnap.val() || {};
             
-            // 2. Fetch or Sync with 'workers/' path
             workerRef.on('value', (workerSnap) => {
                 let workerData = workerSnap.val() || {};
 
-                // Merge data giving priority to saved name & service
+                // Find user details dynamically
+                const finalName = userData.fullName || userData.name || workerData.name || user.displayName || (user.email ? user.email.split('@')[0] : "Worker");
+                const finalService = userData.service || userData.workExpertise || workerData.service || "Cleaning";
+
                 const combinedData = {
-                    name: userData.fullName || userData.name || workerData.name || user.displayName || user.email.split('@')[0],
-                    service: userData.service || userData.workExpertise || workerData.service || "Cleaning",
+                    name: finalName,
+                    service: finalService,
                     wallet: workerData.wallet !== undefined ? workerData.wallet : 50,
                     workerIndex: workerData.workerIndex || Math.floor(100000 + Math.random() * 900000),
                     rating: workerData.rating || 5.0,
                     totalReviews: workerData.totalReviews || 0
                 };
 
-                // Sync merged info back to workers path if not present
                 if (!workerSnap.exists()) {
                     workerRef.set(combinedData);
                 }
@@ -304,6 +303,7 @@ auth.onAuthStateChanged((user) => {
         currentWorkerUid = null;
         document.getElementById('workerUsername').innerText = "Guest Worker";
         document.getElementById('workerID').innerText = "GK-000000";
+        document.getElementById('workerService').innerText = "None";
         renderJobs();
     }
 });
@@ -316,7 +316,6 @@ function updateWorkerUI(data) {
     const workerNum = data.workerIndex || 1;
     document.getElementById('workerID').innerText = 'GK-' + String(workerNum).padStart(6, '0');
     
-    // Service normalize (Remove leading slashes if present in database)
     let cleanService = (data.service || "Cleaning").replace(/^\/+/, '').trim();
     currentWorkerService = cleanService;
     document.getElementById('workerService').innerText = currentWorkerService;
@@ -422,7 +421,6 @@ function updateWorkerService() {
     const newService = document.getElementById('newServiceSelect').value;
     const user = auth.currentUser;
     if (user) {
-        // Update service in both users and workers nodes
         database.ref('workers/' + user.uid).update({ service: newService });
         database.ref('users/' + user.uid).update({ service: newService }).then(() => {
             alert("तुमची सर्विस यशस्वीरीत्या बदलण्यात आली आहे!");
@@ -559,7 +557,6 @@ const item = allOrdersData[key];
 const imgUrl = item.photoUrl || item.imageUrl || item.photo || item.image || null;
 const isAreaMatch = (item.area === selectedArea || !item.area);
 
-// Clean string comparison for Service matching
 const jobService = (item.service || "").replace(/^\/+/, '').trim().toLowerCase();
 const workerService = (currentWorkerService || "").replace(/^\/+/, '').trim().toLowerCase();
 const isServiceMatch = (jobService === workerService);

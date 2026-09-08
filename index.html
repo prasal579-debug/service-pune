@@ -167,6 +167,167 @@
             -webkit-backdrop-filter: blur(10px);
         }
 
+        /* Modern OTP verification animation */
+        .otp-panel {
+            position: relative;
+            overflow: hidden;
+            animation: otpPanelIn .45s cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes otpPanelIn {
+            from { opacity: 0; transform: translateY(14px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .otp-visual {
+            position: relative;
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 10px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            color: #2563eb;
+            background: linear-gradient(145deg, #eff6ff, #dbeafe);
+            box-shadow: inset 0 1px 0 #fff, 0 10px 22px rgba(37,99,235,.16);
+        }
+
+        .otp-visual::before,
+        .otp-visual::after {
+            content: "";
+            position: absolute;
+            inset: -7px;
+            border: 1px solid rgba(91,140,255,.22);
+            border-radius: 22px;
+            animation: otpRing 2.4s ease-out infinite;
+        }
+
+        .otp-visual::after { animation-delay: 1.2s; }
+
+        @keyframes otpRing {
+            0% { opacity: .75; transform: scale(.82); }
+            100% { opacity: 0; transform: scale(1.35); }
+        }
+
+        .otp-boxes {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 7px;
+        }
+
+        .otp-digit {
+            width: 100%;
+            min-width: 0;
+            height: 46px;
+            padding: 0;
+            border: 1px solid rgba(111, 133, 177, .28);
+            border-radius: 13px;
+            background: rgba(255,255,255,.7);
+            color: #17213c;
+            font: 700 1.15rem 'Poppins', sans-serif;
+            text-align: center;
+            outline: none;
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .otp-digit:focus {
+            transform: translateY(-3px) scale(1.04);
+            border-color: #5b8cff;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(91,140,255,.15), 0 8px 16px rgba(53,85,160,.12);
+        }
+
+        .otp-digit.filled {
+            animation: otpDigitPop .24s ease-out;
+            border-color: rgba(91,140,255,.58);
+            background: rgba(239,246,255,.92);
+        }
+
+        @keyframes otpDigitPop {
+            0% { transform: scale(.72); opacity: .5; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .otp-boxes.otp-error { animation: otpShake .42s ease-in-out; }
+
+        @keyframes otpShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-7px); }
+            50% { transform: translateX(7px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        .otp-panel.is-verifying .otp-digit {
+            color: #2563eb;
+            border-color: rgba(37,99,235,.35);
+            animation: verifyingPulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes verifyingPulse {
+            from { box-shadow: 0 0 0 0 rgba(37,99,235,.08); }
+            to { box-shadow: 0 0 0 5px rgba(37,99,235,.12); }
+        }
+
+        .otp-success {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: grid;
+            place-items: center;
+            align-content: center;
+            gap: 6px;
+            border-radius: 17px;
+            background: rgba(240,253,244,.96);
+            color: #15803d;
+            text-align: center;
+            animation: successReveal .5s cubic-bezier(.2,.8,.2,1);
+        }
+
+        .otp-success-check {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #22c55e;
+            border-radius: 50%;
+            color: #16a34a;
+            font-size: 1.7rem;
+            font-weight: 700;
+            background: #dcfce7;
+            box-shadow: 0 0 0 9px rgba(34,197,94,.1);
+            animation: successCheck .55s .1s both cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes successReveal {
+            from { opacity: 0; transform: scale(.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes successCheck {
+            from { opacity: 0; transform: scale(.4) rotate(-18deg); }
+            to { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
+        .otp-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: particleBurst .8s ease-out forwards;
+        }
+
+        @keyframes particleBurst {
+            from { opacity: 1; transform: translate(0, 0) scale(1); }
+            to { opacity: 0; transform: translate(var(--x), var(--y)) scale(.2); }
+        }
+
+        @media (max-width: 380px) {
+            .otp-boxes { gap: 5px; }
+            .otp-digit { height: 42px; border-radius: 11px; }
+        }
+
         footer {
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -268,15 +429,39 @@
                     Send OTP & Verify
                 </button>
 
-                <div id="otpContainer" class="hidden space-y-3 pt-3 border-t">
-                    <label id="otpLabel" class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center">
-                        <button type="button" id="verifyOtpBtn" onclick="verifyOTPAndRegister(event)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Signup</button>
+                <div id="otpContainer" class="hidden otp-panel space-y-3 pt-4 mt-2 border-t">
+                    <div class="otp-visual" aria-hidden="true">🔐</div>
+                    <div class="text-center">
+                        <p class="text-sm font-bold text-gray-800">Verify your account</p>
+                        <label id="otpLabel" class="block text-xs font-semibold text-blue-600 mt-1">Enter OTP sent to your Email:</label>
                     </div>
+
+                    <div id="otpBoxes" class="otp-boxes" role="group" aria-label="6 digit OTP">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="OTP digit 1">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 2">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 3">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 4">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 5">
+                        <input class="otp-digit" maxlength="1" inputmode="numeric" aria-label="OTP digit 6">
+                    </div>
+                    <input type="hidden" id="otpInput">
+
+                    <div id="otpProgress" class="hidden text-center text-xs font-semibold text-blue-600">
+                        <span class="inline-block animate-spin mr-1">⟳</span> Verifying securely...
+                    </div>
+
+                    <button type="button" id="verifyOtpBtn" onclick="verifyOTPAndRegister(event)" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl text-xs transition">Verify & Signup</button>
 
                     <div class="flex justify-between items-center text-xs pt-1">
                         <button type="button" onclick="resendOTP()" id="resendBtn" class="text-blue-600 hover:underline font-semibold">🔄 Resend OTP</button>
+                        <span class="text-gray-400">Secure verification</span>
+                    </div>
+
+                    <div id="otpSuccess" class="otp-success hidden">
+                        <div class="otp-success-check">✓</div>
+                        <strong>Verified successfully!</strong>
+                        <span class="text-[10px]">Your account is ready</span>
+                        <div id="otpParticles" aria-hidden="true"></div>
                     </div>
                 </div>
 
@@ -315,6 +500,132 @@
         let generatedOTP = null;
         let pendingUserData = null;
         let resetPasswordMobile = null;
+
+        const otpDigitInputs = Array.from(document.querySelectorAll('.otp-digit'));
+
+        function syncOtpValue() {
+            document.getElementById('otpInput').value = otpDigitInputs.map(input => input.value).join('');
+        }
+
+        function resetOtpUI() {
+            const otpContainer = document.getElementById('otpContainer');
+            const otpBoxes = document.getElementById('otpBoxes');
+            const success = document.getElementById('otpSuccess');
+            const progress = document.getElementById('otpProgress');
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+
+            otpDigitInputs.forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+                input.disabled = false;
+            });
+            syncOtpValue();
+            otpContainer.classList.remove('is-verifying');
+            otpBoxes.classList.remove('otp-error');
+            success.classList.add('hidden');
+            progress.classList.add('hidden');
+            verifyBtn.disabled = false;
+            verifyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+
+        function showOtpPanel(mode) {
+            const otpContainer = document.getElementById('otpContainer');
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            const label = document.getElementById('otpLabel');
+
+            resetOtpUI();
+            otpContainer.classList.remove('hidden');
+            verifyBtn.onclick = mode === 'reset' ? verifyResetOTP : verifyOTPAndRegister;
+            verifyBtn.innerText = mode === 'reset' ? 'Verify OTP' : 'Verify & Signup';
+            label.innerText = mode === 'reset'
+                ? 'Enter Reset OTP sent to Email:'
+                : 'Enter OTP sent to your Email:';
+            setTimeout(() => otpDigitInputs[0]?.focus(), 80);
+        }
+
+        function handleOtpInput(event, index) {
+            const input = event.target;
+            input.value = input.value.replace(/\D/g, '').slice(-1);
+            input.classList.toggle('filled', Boolean(input.value));
+            syncOtpValue();
+
+            if (input.value && otpDigitInputs[index + 1]) {
+                otpDigitInputs[index + 1].focus();
+            }
+        }
+
+        function handleOtpKeydown(event, index) {
+            if (event.key === 'Backspace' && !event.target.value && otpDigitInputs[index - 1]) {
+                otpDigitInputs[index - 1].focus();
+            }
+            if (event.key === 'ArrowLeft' && otpDigitInputs[index - 1]) {
+                otpDigitInputs[index - 1].focus();
+            }
+            if (event.key === 'ArrowRight' && otpDigitInputs[index + 1]) {
+                otpDigitInputs[index + 1].focus();
+            }
+        }
+
+        function createOtpParticles() {
+            const particles = document.getElementById('otpParticles');
+            particles.innerHTML = '';
+            for (let i = 0; i < 14; i++) {
+                const particle = document.createElement('span');
+                const angle = (Math.PI * 2 * i) / 14;
+                const distance = 42 + Math.random() * 22;
+                particle.className = 'otp-particle';
+                particle.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
+                particles.appendChild(particle);
+            }
+        }
+
+        function animateOtpVerification(onComplete) {
+            const otpContainer = document.getElementById('otpContainer');
+            const otpBoxes = document.getElementById('otpBoxes');
+            const progress = document.getElementById('otpProgress');
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            const success = document.getElementById('otpSuccess');
+
+            otpContainer.classList.add('is-verifying');
+            progress.classList.remove('hidden');
+            verifyBtn.disabled = true;
+            verifyBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            otpDigitInputs.forEach(input => input.disabled = true);
+
+            setTimeout(() => {
+                otpContainer.classList.remove('is-verifying');
+                progress.classList.add('hidden');
+                success.classList.remove('hidden');
+                createOtpParticles();
+                setTimeout(onComplete, 850);
+            }, 700);
+        }
+
+        function showOtpError(message) {
+            const otpBoxes = document.getElementById('otpBoxes');
+            otpBoxes.classList.remove('otp-error');
+            void otpBoxes.offsetWidth;
+            otpBoxes.classList.add('otp-error');
+            showStatus(message, 'error');
+        }
+
+        otpDigitInputs.forEach((input, index) => {
+            input.addEventListener('input', event => handleOtpInput(event, index));
+            input.addEventListener('keydown', event => handleOtpKeydown(event, index));
+            input.addEventListener('paste', event => {
+                event.preventDefault();
+                const pasted = (event.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+                pasted.split('').forEach((digit, offset) => {
+                    if (otpDigitInputs[offset]) {
+                        otpDigitInputs[offset].value = digit;
+                        otpDigitInputs[offset].classList.add('filled');
+                    }
+                });
+                syncOtpValue();
+                otpDigitInputs[Math.min(pasted.length, 6) - 1]?.focus();
+            });
+        });
 
         function setRole(role) {
             currentRole = role;
@@ -453,10 +764,7 @@
             emailjs.send(serviceID, templateID, templateParams)
                 .then(() => {
                     showStatus("📩 Reset OTP pathavla ahe! Krupaya check kara.", "success");
-                    document.getElementById('otpContainer').classList.remove('hidden');
-                    document.getElementById('otpLabel').innerText = "Enter Reset OTP sent to Email:";
-                    document.getElementById('verifyOtpBtn').setAttribute('onclick', 'verifyResetOTP(event)');
-                    document.getElementById('verifyOtpBtn').innerText = "Verify OTP";
+                    showOtpPanel('reset');
                 })
                 .catch((err) => {
                     console.error("EmailJS Error:", err);
@@ -466,14 +774,18 @@
 
         function verifyResetOTP(event) {
             if(event) event.preventDefault();
+            syncOtpValue();
             let userEnteredOTP = document.getElementById('otpInput').value.trim();
 
             if (userEnteredOTP === generatedOTP) {
-                showStatus("✅ OTP verified successfully! Now enter your new password.", "success");
-                document.getElementById('otpContainer').classList.add('hidden');
-                document.getElementById('newPasswordContainer').classList.remove('hidden');
+                showStatus("⏳ OTP verify hot ahe...", "info");
+                animateOtpVerification(() => {
+                    showStatus("✅ OTP verified successfully! Now enter your new password.", "success");
+                    document.getElementById('otpContainer').classList.add('hidden');
+                    document.getElementById('newPasswordContainer').classList.remove('hidden');
+                });
             } else {
-                showStatus("❌ चुकीचा OTP! Correct code taka.", "error");
+                showOtpError("❌ चुकीचा OTP! Correct code taka.");
             }
         }
 
@@ -582,7 +894,7 @@
             emailjs.send(serviceID, templateID, templateParams)
                 .then(() => {
                     showStatus("📩 OTP Pathavla ahe! Krupaya Inbox ki Spam folder check kara.", "success");
-                    document.getElementById('otpContainer').classList.remove('hidden');
+                    showOtpPanel('signup');
                     document.getElementById('submitBtn').classList.add('hidden');
                 })
                 .catch((err) => {
@@ -603,20 +915,23 @@
 
         function verifyOTPAndRegister(event) {
             if(event) event.preventDefault();
-            
+            syncOtpValue();
             let userEnteredOTP = document.getElementById('otpInput').value.trim();
 
             if (userEnteredOTP === generatedOTP) {
-                localStorage.setItem('gharmitra_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
-                localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
+                showStatus("⏳ OTP verify hot ahe...", "info");
+                animateOtpVerification(() => {
+                    localStorage.setItem('gharmitra_user_' + pendingUserData.mobile, JSON.stringify(pendingUserData));
+                    localStorage.setItem('current_user_session', JSON.stringify(pendingUserData));
 
-                showStatus("🎉 Signup Successful! Redirecting...", "success");
+                    showStatus("🎉 Signup Successful! Redirecting...", "success");
 
-                setTimeout(() => {
-                    redirectUser(currentRole);
-                }, 800);
+                    setTimeout(() => {
+                        redirectUser(currentRole);
+                    }, 350);
+                });
             } else {
-                showStatus("❌ चुकीचा OTP! Correct code taka.", "error");
+                showOtpError("❌ चुकीचा OTP! Correct code taka.");
             }
         }
 

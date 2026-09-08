@@ -205,11 +205,11 @@ Service: <strong id="workerService" class="text-white">Loading...</strong>
 <button onclick="closeServiceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-lg font-bold w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">✕</button>
 <h3 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-tools text-blue-600"></i> तुमची सर्विस बदला</h3>
 <select id="newServiceSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-800 font-semibold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm mb-4">
-    <option value="Plumbing">Plumbing (प्लंबिंग काम)</option>
-    <option value="Electrician">Electrician (इलेक्ट्रिक काम)</option>
-    <option value="Carpenter">Carpenter (सुतारकाम)</option>
-    <option value="Painting">Painting (रंगकाम)</option>
     <option value="Cleaning">Cleaning (घर स्वच्छता)</option>
+    <option value="Electrician">Electrician (इलेक्ट्रिक काम)</option>
+    <option value="Plumbing">Plumbing (प्लंबिंग काम)</option>
+    <option value="Painting">Painting (रंगकाम)</option>
+    <option value="Carpenter">Carpenter (सुतारकाम)</option>
     <option value="AC Repair">AC Repair (एसी रिपेयर)</option>
     <option value="Appliance Repair">Appliance Repair (उपकरण दुरुस्ती)</option>
     <option value="Masonry">Masonry (बांधकाम/गिलावा)</option>
@@ -259,10 +259,30 @@ Service: <strong id="workerService" class="text-white">Loading...</strong>
 let isDutyOn = false;
 let allOrdersData = null;
 let currentWorkerUid = null;
-let currentWorkerService = ""; 
+let currentWorkerService = "Cleaning"; 
 let activeChatOrderId = null;
 let locationWatchId = null;
 let earningsChartInstance = null;
+
+// Page Load Var Local Session Check
+document.addEventListener("DOMContentLoaded", () => {
+    loadLocalWorkerSession();
+});
+
+function loadLocalWorkerSession() {
+    let session = localStorage.getItem('current_user_session');
+    if (session) {
+        let userData = JSON.parse(session);
+        const name = userData.fullName || userData.name || "Worker";
+        const service = userData.workType || userData.service || "Cleaning";
+        updateWorkerUI({
+            name: name,
+            service: service,
+            wallet: userData.balance || 50,
+            workerIndex: userData.mobile ? userData.mobile.slice(-6) : 100001
+        });
+    }
+}
 
 auth.onAuthStateChanged((user) => {
     if (user) {
@@ -277,14 +297,15 @@ auth.onAuthStateChanged((user) => {
             workerRef.on('value', (workerSnap) => {
                 let workerData = workerSnap.val() || {};
 
-                // Find user details dynamically
-                const finalName = userData.fullName || userData.name || workerData.name || user.displayName || (user.email ? user.email.split('@')[0] : "Worker");
-                const finalService = userData.service || userData.workExpertise || workerData.service || "Cleaning";
+                let localSession = JSON.parse(localStorage.getItem('current_user_session') || '{}');
+
+                const finalName = userData.fullName || userData.name || workerData.name || localSession.fullName || localSession.name || (user.email ? user.email.split('@')[0] : "Worker");
+                const finalService = userData.service || userData.workType || workerData.service || localSession.workType || localSession.service || "Cleaning";
 
                 const combinedData = {
                     name: finalName,
                     service: finalService,
-                    wallet: workerData.wallet !== undefined ? workerData.wallet : 50,
+                    wallet: workerData.wallet !== undefined ? workerData.wallet : (localSession.balance || 50),
                     workerIndex: workerData.workerIndex || Math.floor(100000 + Math.random() * 900000),
                     rating: workerData.rating || 5.0,
                     totalReviews: workerData.totalReviews || 0
@@ -300,11 +321,8 @@ auth.onAuthStateChanged((user) => {
 
         loadWorkerEarnings(user.uid);
     } else {
-        currentWorkerUid = null;
-        document.getElementById('workerUsername').innerText = "Guest Worker";
-        document.getElementById('workerID').innerText = "GK-000000";
-        document.getElementById('workerService').innerText = "None";
-        renderJobs();
+        // Fallback to local session if no Firebase Auth
+        loadLocalWorkerSession();
     }
 });
 
@@ -384,49 +402,32 @@ function renderEarningsChart(dataVals) {
     });
 }
 
-function startLiveLocationTracking(orderId) {
-    if ("geolocation" in navigator) {
-        locationWatchId = navigator.geolocation.watchPosition((position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            database.ref('orders/' + orderId + '/workerLocation').set({
-                lat: lat,
-                lng: lng,
-                updatedAt: Date.now()
-            });
-        }, (error) => {
-            console.error("Location error: ", error.message);
-        }, {
-            enableHighAccuracy: true,
-            maximumAge: 10000,
-            timeout: 5000
-        });
-    } else {
-        alert("तुमच्या ब्राउझरमध्ये जीपीएस लोकेशन सपोर्ट उपलब्ध नाही.");
-    }
-}
-
-function stopLiveLocationTracking() {
-    if (locationWatchId !== null) {
-        navigator.geolocation.clearWatch(locationWatchId);
-        locationWatchId = null;
-    }
-}
-
 function openServiceModal() { document.getElementById('serviceModal').classList.remove('hidden'); }
 function closeServiceModal() { document.getElementById('serviceModal').classList.add('hidden'); }
 
 function updateWorkerService() {
     const newService = document.getElementById('newServiceSelect').value;
+    
+    // Update local UI
+    currentWorkerService = newService;
+    document.getElementById('workerService').innerText = newService;
+
+    // Update Local Session
+    let localSession = JSON.parse(localStorage.getItem('current_user_session') || '{}');
+    localSession.workType = newService;
+    localSession.service = newService;
+    localStorage.setItem('current_user_session', JSON.stringify(localSession));
+
+    // Update Firebase if logged in
     const user = auth.currentUser;
     if (user) {
         database.ref('workers/' + user.uid).update({ service: newService });
-        database.ref('users/' + user.uid).update({ service: newService }).then(() => {
-            alert("तुमची सर्विस यशस्वीरीत्या बदलण्यात आली आहे!");
-            closeServiceModal();
-        });
+        database.ref('users/' + user.uid).update({ service: newService, workType: newService });
     }
+
+    alert("तुमची सर्विस यशस्वीरीत्या बदलण्यात आली आहे!");
+    closeServiceModal();
+    renderJobs();
 }
 
 function payWithRazorpay() {
@@ -451,6 +452,9 @@ function addMoneyToFirebaseWallet(amount) {
     const user = auth.currentUser;
     if (user) {
         database.ref('workers/' + user.uid + '/wallet').transaction(currentBalance => (currentBalance || 50) + amount);
+    } else {
+        let currentWallet = parseInt(document.getElementById('walletAmount').innerText) || 50;
+        document.getElementById('walletAmount').innerText = currentWallet + amount;
     }
 }
 
@@ -501,122 +505,121 @@ function closeImagePreview() {
 }
 
 function toggleDuty() {
-isDutyOn = !isDutyOn;
-const btn = document.getElementById('dutyToggleBtn');
-const headerDot = document.getElementById('dutyDot');
-const headerText = document.getElementById('dutyText');
+    isDutyOn = !isDutyOn;
+    const btn = document.getElementById('dutyToggleBtn');
+    const headerDot = document.getElementById('dutyDot');
+    const headerText = document.getElementById('dutyText');
 
-if (isDutyOn) {
-btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
-btn.innerHTML = "🟢 Duty ON (Click OFF)";
-headerDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-headerText.innerText = "Duty ON";
-} else {
-btn.className = "w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
-btn.innerHTML = "🔴 Duty OFF (Click ON)";
-headerDot.className = "w-2 h-2 rounded-full bg-red-500";
-headerText.innerText = "Duty OFF";
-}
-renderJobs();
+    if (isDutyOn) {
+        btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
+        btn.innerHTML = "🟢 Duty ON (Click OFF)";
+        headerDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        headerText.innerText = "Duty ON";
+    } else {
+        btn.className = "w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mb-6";
+        btn.innerHTML = "🔴 Duty OFF (Click ON)";
+        headerDot.className = "w-2 h-2 rounded-full bg-red-500";
+        headerText.innerText = "Duty OFF";
+    }
+    renderJobs();
 }
 
 function filterAreaJobs() { renderJobs(); }
 
 database.ref("orders").on("value", (snapshot) => {
-allOrdersData = snapshot.val();
-renderJobs();
+    allOrdersData = snapshot.val();
+    renderJobs();
 });
 
 function renderJobs() {
-const jobsContainer = document.getElementById('availableJobsContainer');
-const acceptedContainer = document.getElementById('acceptedJobsContainer');
-const jobCountBadge = document.getElementById('jobCount');
-const selectedArea = document.getElementById('workingAreaSelect').value;
+    const jobsContainer = document.getElementById('availableJobsContainer');
+    const acceptedContainer = document.getElementById('acceptedJobsContainer');
+    const jobCountBadge = document.getElementById('jobCount');
+    const selectedArea = document.getElementById('workingAreaSelect').value;
 
-acceptedContainer.innerHTML = "";
+    acceptedContainer.innerHTML = "";
 
-if (!isDutyOn) {
-jobsContainer.innerHTML = `<div class="text-center py-10"><span class="text-5xl block mb-3">😴</span><p class="font-bold text-slate-700 text-sm">तुम्ही सध्या Duty OFF वर आहात</p></div>`;
-jobCountBadge.innerText = "0 New Jobs";
-return;
-}
+    if (!isDutyOn) {
+        jobsContainer.innerHTML = `<div class="text-center py-10"><span class="text-5xl block mb-3">😴</span><p class="font-bold text-slate-700 text-sm">तुम्ही सध्या Duty OFF वर आहात</p></div>`;
+        jobCountBadge.innerText = "0 New Jobs";
+        return;
+    }
 
-if (!allOrdersData) {
-jobsContainer.innerHTML = '<p class="text-slate-400 text-xs text-center py-10">सध्या एकही काम उपलब्ध नाही...</p>';
-jobCountBadge.innerText = "0 New Jobs";
-return;
-}
+    if (!allOrdersData) {
+        jobsContainer.innerHTML = '<p class="text-slate-400 text-xs text-center py-10">सध्या एकही काम उपलब्ध नाही...</p>';
+        jobCountBadge.innerText = "0 New Jobs";
+        return;
+    }
 
-jobsContainer.innerHTML = "";
-const keys = Object.keys(allOrdersData).reverse();
-let pendingCount = 0;
-let activeTaskFound = false;
+    jobsContainer.innerHTML = "";
+    const keys = Object.keys(allOrdersData).reverse();
+    let pendingCount = 0;
+    let activeTaskFound = false;
 
-keys.forEach(key => {
-const item = allOrdersData[key];
-const imgUrl = item.photoUrl || item.imageUrl || item.photo || item.image || null;
-const isAreaMatch = (item.area === selectedArea || !item.area);
+    keys.forEach(key => {
+        const item = allOrdersData[key];
+        const imgUrl = item.photoUrl || item.imageUrl || item.photo || item.image || null;
+        const isAreaMatch = (item.area === selectedArea || !item.area);
 
-const jobService = (item.service || "").replace(/^\/+/, '').trim().toLowerCase();
-const workerService = (currentWorkerService || "").replace(/^\/+/, '').trim().toLowerCase();
-const isServiceMatch = (jobService === workerService);
+        const jobService = (item.service || "").replace(/^\/+/, '').trim().toLowerCase();
+        const workerService = (currentWorkerService || "").replace(/^\/+/, '').trim().toLowerCase();
+        const isServiceMatch = (jobService === workerService);
 
-if (item.status === 'Pending' && isAreaMatch && isServiceMatch) {
-pendingCount++;
-const jobCard = document.createElement('div');
-jobCard.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl hover:border-blue-400 transition shadow-sm space-y-3";
-const photoHtml = imgUrl ? `<div class="my-2"><div class="relative cursor-pointer group rounded-xl overflow-hidden border border-slate-200" onclick="openImagePreview('${imgUrl}')"><img src="${imgUrl}" class="w-full h-44 object-cover"></div></div>` : '';
+        if (item.status === 'Pending' && isAreaMatch && isServiceMatch) {
+            pendingCount++;
+            const jobCard = document.createElement('div');
+            jobCard.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl hover:border-blue-400 transition shadow-sm space-y-3";
+            const photoHtml = imgUrl ? `<div class="my-2"><div class="relative cursor-pointer group rounded-xl overflow-hidden border border-slate-200" onclick="openImagePreview('${imgUrl}')"><img src="${imgUrl}" class="w-full h-44 object-cover"></div></div>` : '';
 
-jobCard.innerHTML = `
-<div class="flex justify-between items-start">
-<div><span class="bg-blue-100 text-blue-700 text-[11px] font-bold px-2.5 py-1 rounded-full">⚡ ${item.service}</span><h4 class="font-bold text-slate-800 text-sm mt-2"><i class="fa-solid fa-user text-blue-600"></i> ${item.customerName}</h4></div>
-<span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">${item.budget || '₹500'}</span>
-</div>
-<div class="text-xs text-slate-600 space-y-1 bg-white p-3 rounded-xl border border-slate-100">
-<p><i class="fa-solid fa-location-dot text-red-500 mr-1.5"></i><strong>पत्ता:</strong> ${item.address}</p>
-<p><i class="fa-solid fa-phone text-emerald-500 mr-1.5"></i><strong>संपर्क:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold">${item.customerMobile}</a></p>
-</div>
-${photoHtml}
-<div class="grid grid-cols-2 gap-2">
-<button onclick="acceptOrder('${key}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">🤝 Accept Order</button>
-<a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
-</div>`;
-jobsContainer.appendChild(jobCard);
-}
+            jobCard.innerHTML = `
+            <div class="flex justify-between items-start">
+            <div><span class="bg-blue-100 text-blue-700 text-[11px] font-bold px-2.5 py-1 rounded-full">⚡ ${item.service}</span><h4 class="font-bold text-slate-800 text-sm mt-2"><i class="fa-solid fa-user text-blue-600"></i> ${item.customerName}</h4></div>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">${item.budget || '₹500'}</span>
+            </div>
+            <div class="text-xs text-slate-600 space-y-1 bg-white p-3 rounded-xl border border-slate-100">
+            <p><i class="fa-solid fa-location-dot text-red-500 mr-1.5"></i><strong>पत्ता:</strong> ${item.address}</p>
+            <p><i class="fa-solid fa-phone text-emerald-500 mr-1.5"></i><strong>संपर्क:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold">${item.customerMobile}</a></p>
+            </div>
+            ${photoHtml}
+            <div class="grid grid-cols-2 gap-2">
+            <button onclick="acceptOrder('${key}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">🤝 Accept Order</button>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
+            </div>`;
+            jobsContainer.appendChild(jobCard);
+        }
 
-if ((item.status === 'Accepted' || item.status === 'On The Way') && !activeTaskFound && item.workerUid === currentWorkerUid) {
-activeTaskFound = true;
-const activeCard = document.createElement('div');
-activeCard.className = "bg-white p-5 rounded-2xl border border-emerald-200 shadow-md space-y-4";
-activeCard.innerHTML = `
-<div class="flex justify-between items-center border-b pb-3 border-slate-100">
-<span class="font-bold text-slate-800 text-xs">🛠️ Active Task In-Progress</span>
-<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">${item.status}</span>
-</div>
-<div class="bg-blue-50/70 p-3.5 rounded-xl border border-blue-100 text-xs space-y-1.5 text-slate-700">
-<p><strong>ग्राहक:</strong> ${item.customerName}</p>
-<p><strong>सेवा:</strong> ${item.service}</p>
-<p><strong>मोबाइल:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold underline">${item.customerMobile}</a></p>
-<p><strong>पत्ता:</strong> ${item.address}</p>
-</div>
-<div class="grid grid-cols-2 gap-2">
-<a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
-<button onclick="openChatModal('${key}', '${item.customerName}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">💬 Chat</button>
-</div>
-<div class="grid grid-cols-2 gap-2 pt-1">
-<button onclick="updateStatus('${key}', 'On The Way')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">🚗 On The Way</button>
-<button onclick="updateStatus('${key}', 'Completed')" class="dev bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">✓ Completed</button>
-</div>`;
-acceptedContainer.appendChild(activeCard);
-}
-});
-jobCountBadge.innerText = `${pendingCount} New Jobs`;
+        if ((item.status === 'Accepted' || item.status === 'On The Way') && !activeTaskFound && item.workerUid === currentWorkerUid) {
+            activeTaskFound = true;
+            const activeCard = document.createElement('div');
+            activeCard.className = "bg-white p-5 rounded-2xl border border-emerald-200 shadow-md space-y-4";
+            activeCard.innerHTML = `
+            <div class="flex justify-between items-center border-b pb-3 border-slate-100">
+            <span class="font-bold text-slate-800 text-xs">🛠️ Active Task In-Progress</span>
+            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">${item.status}</span>
+            </div>
+            <div class="bg-blue-50/70 p-3.5 rounded-xl border border-blue-100 text-xs space-y-1.5 text-slate-700">
+            <p><strong>ग्राहक:</strong> ${item.customerName}</p>
+            <p><strong>सेवा:</strong> ${item.service}</p>
+            <p><strong>मोबाइल:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold underline">${item.customerMobile}</a></p>
+            <p><strong>पत्ता:</strong> ${item.address}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+            <a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
+            <button onclick="openChatModal('${key}', '${item.customerName}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">💬 Chat</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="updateStatus('${key}', 'On The Way')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">🚗 On The Way</button>
+            <button onclick="updateStatus('${key}', 'Completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">✓ Completed</button>
+            </div>`;
+            acceptedContainer.appendChild(activeCard);
+        }
+    });
+    jobCountBadge.innerText = `${pendingCount} New Jobs`;
 }
 
 function acceptOrder(orderId) {
     if (!currentWorkerUid) {
-        alert("कृपया आधी लॉग इन करा!");
-        return;
+        currentWorkerUid = "local_worker_" + Date.now();
     }
     database.ref("orders/" + orderId).update({
         status: "Accepted", workerUid: currentWorkerUid
@@ -626,11 +629,6 @@ function acceptOrder(orderId) {
 function updateStatus(orderId, newStatus) {
     database.ref("orders/" + orderId).update({ status: newStatus }).then(() => {
         alert("स्टेटस अपडेट केले: " + newStatus);
-        if (newStatus === 'On The Way') {
-            startLiveLocationTracking(orderId); 
-        } else if (newStatus === 'Completed') {
-            stopLiveLocationTracking(); 
-        }
     });
 }
 </script>

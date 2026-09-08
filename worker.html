@@ -268,48 +268,35 @@ let earningsChartInstance = null;
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentWorkerUid = user.uid;
-        const emailPrefix = user.email ? user.email.split('@')[0] : "Worker";
-        document.getElementById('workerUsername').innerText = emailPrefix;
-
+        
+        // 1. First Check 'users/' path for signup data (Prathamesh Rasal, etc.)
+        const userRef = database.ref('users/' + user.uid);
         const workerRef = database.ref('workers/' + user.uid);
 
-        let dataLoaded = false;
+        userRef.on('value', (userSnap) => {
+            let userData = userSnap.val() || {};
+            
+            // 2. Fetch or Sync with 'workers/' path
+            workerRef.on('value', (workerSnap) => {
+                let workerData = workerSnap.val() || {};
 
-        workerRef.once('value').then((snapshot) => {
-            dataLoaded = true;
-            if (snapshot.exists()) {
-                updateWorkerUI(snapshot.val());
-            } else {
-                const counterRef = database.ref('system/totalWorkersCount');
-                counterRef.transaction((currentCount) => {
-                    return (currentCount || 0) + 1;
-                }, (error, committed, snapshotVal) => {
-                    const newIndex = committed ? snapshotVal.val() : Math.floor(Math.random() * 1000) + 1;
-                    const newWorkerData = {
-                        workerIndex: newIndex,
-                        service: "Electrician",
-                        wallet: 50,
-                        rating: 5.0,
-                        totalReviews: 0,
-                        email: user.email || ""
-                    };
-                    workerRef.set(newWorkerData).then(() => {
-                        updateWorkerUI(newWorkerData);
-                    });
-                });
-            }
-        });
+                // Merge data giving priority to saved name & service
+                const combinedData = {
+                    name: userData.fullName || userData.name || workerData.name || user.displayName || user.email.split('@')[0],
+                    service: userData.service || userData.workExpertise || workerData.service || "Cleaning",
+                    wallet: workerData.wallet !== undefined ? workerData.wallet : 50,
+                    workerIndex: workerData.workerIndex || Math.floor(100000 + Math.random() * 900000),
+                    rating: workerData.rating || 5.0,
+                    totalReviews: workerData.totalReviews || 0
+                };
 
-        setTimeout(() => {
-            if (!dataLoaded) {
-                updateWorkerUI({ workerIndex: 1, service: "Electrician", wallet: 50, rating: 5.0, totalReviews: 0 });
-            }
-        }, 3000);
+                // Sync merged info back to workers path if not present
+                if (!workerSnap.exists()) {
+                    workerRef.set(combinedData);
+                }
 
-        workerRef.on('value', (snapshot) => {
-            if (snapshot.exists()) {
-                updateWorkerUI(snapshot.val());
-            }
+                updateWorkerUI(combinedData);
+            });
         });
 
         loadWorkerEarnings(user.uid);
@@ -322,9 +309,16 @@ auth.onAuthStateChanged((user) => {
 });
 
 function updateWorkerUI(data) {
+    if (data.name) {
+        document.getElementById('workerUsername').innerText = data.name;
+    }
+    
     const workerNum = data.workerIndex || 1;
     document.getElementById('workerID').innerText = 'GK-' + String(workerNum).padStart(6, '0');
-    currentWorkerService = data.service || "Electrician";
+    
+    // Service normalize (Remove leading slashes if present in database)
+    let cleanService = (data.service || "Cleaning").replace(/^\/+/, '').trim();
+    currentWorkerService = cleanService;
     document.getElementById('workerService').innerText = currentWorkerService;
 
     if(data.wallet !== undefined) document.getElementById('walletAmount').innerText = data.wallet;
@@ -428,7 +422,9 @@ function updateWorkerService() {
     const newService = document.getElementById('newServiceSelect').value;
     const user = auth.currentUser;
     if (user) {
-        database.ref('workers/' + user.uid).update({ service: newService }).then(() => {
+        // Update service in both users and workers nodes
+        database.ref('workers/' + user.uid).update({ service: newService });
+        database.ref('users/' + user.uid).update({ service: newService }).then(() => {
             alert("तुमची सर्विस यशस्वीरीत्या बदलण्यात आली आहे!");
             closeServiceModal();
         });
@@ -562,7 +558,11 @@ keys.forEach(key => {
 const item = allOrdersData[key];
 const imgUrl = item.photoUrl || item.imageUrl || item.photo || item.image || null;
 const isAreaMatch = (item.area === selectedArea || !item.area);
-const isServiceMatch = (item.service && item.service.toLowerCase() === currentWorkerService.toLowerCase());
+
+// Clean string comparison for Service matching
+const jobService = (item.service || "").replace(/^\/+/, '').trim().toLowerCase();
+const workerService = (currentWorkerService || "").replace(/^\/+/, '').trim().toLowerCase();
+const isServiceMatch = (jobService === workerService);
 
 if (item.status === 'Pending' && isAreaMatch && isServiceMatch) {
 pendingCount++;

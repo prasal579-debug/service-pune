@@ -24,6 +24,195 @@
       firebase.initializeApp(firebaseConfig);
       const database = firebase.database();
     </script>
+    <style>
+        :root {
+            --night: #101a3b;
+            --blue: #5b8cff;
+            --cyan: #63e6f4;
+            --violet: #9c8cff;
+            --ink: #17213c;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            position: relative;
+            isolation: isolate;
+            overflow-x: hidden;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 9% 8%, rgba(89, 226, 255, .35), transparent 25%),
+                radial-gradient(circle at 92% 84%, rgba(164, 124, 255, .36), transparent 27%),
+                linear-gradient(135deg, #101a3b 0%, #1d438c 48%, #32276b 100%) !important;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            z-index: -1;
+            width: 22rem;
+            height: 22rem;
+            border-radius: 47% 53% 62% 38% / 42% 38% 62% 58%;
+            filter: blur(2px);
+            opacity: .58;
+            pointer-events: none;
+            animation: customerBlob 15s ease-in-out infinite alternate;
+        }
+
+        body::before {
+            left: -9rem;
+            top: 22%;
+            background: linear-gradient(135deg, rgba(84, 232, 255, .7), rgba(91, 140, 255, .15));
+        }
+
+        body::after {
+            right: -8rem;
+            bottom: 4%;
+            background: linear-gradient(135deg, rgba(196, 134, 255, .52), rgba(77, 218, 255, .18));
+            animation-delay: -6s;
+        }
+
+        @keyframes customerBlob {
+            0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+            100% { transform: translate3d(2rem, -1.5rem, 0) rotate(18deg) scale(1.12); }
+        }
+
+        @keyframes softPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 230, 244, .25); }
+            50% { box-shadow: 0 0 0 8px rgba(99, 230, 244, 0); }
+        }
+
+        body > div:first-of-type {
+            background: linear-gradient(145deg, rgba(255,255,255,.84), rgba(255,255,255,.55)) !important;
+            backdrop-filter: blur(28px) saturate(155%);
+            -webkit-backdrop-filter: blur(28px) saturate(155%);
+            border: 1px solid rgba(255,255,255,.72) !important;
+            box-shadow:
+                0 32px 90px rgba(4, 14, 51, .32),
+                inset 0 1px 0 rgba(255,255,255,.9);
+        }
+
+        body > div:first-of-type > header {
+            background: linear-gradient(110deg, rgba(24, 55, 133, .94), rgba(63, 76, 170, .82)) !important;
+            box-shadow: 0 1px 0 rgba(255,255,255,.18), 0 12px 28px rgba(18, 35, 91, .18);
+        }
+
+        body > div:first-of-type > header > div:first-child span:first-child {
+            background: linear-gradient(145deg, #fff, #d7f8ff) !important;
+            box-shadow: 0 8px 20px rgba(4, 23, 80, .2), inset 0 1px 0 white;
+        }
+
+        body > div:first-of-type > header button {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+        }
+
+        body > div:first-of-type > div > div:first-child {
+            background: rgba(255,255,255,.42) !important;
+        }
+
+        body > div:first-of-type > div > div:last-child {
+            background: rgba(226, 237, 255, .44) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        #bookingForm input,
+        #bookingForm select,
+        #bookingForm textarea,
+        #jobPhoto,
+        #searchMobileInput,
+        #reviewComment {
+            background: rgba(255,255,255,.68) !important;
+            border-color: rgba(112, 137, 189, .24) !important;
+            box-shadow: inset 0 1px 2px rgba(25, 46, 97, .05);
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .2s ease;
+        }
+
+        #bookingForm input:focus,
+        #bookingForm select:focus,
+        #bookingForm textarea:focus,
+        #jobPhoto:focus,
+        #searchMobileInput:focus,
+        #reviewComment:focus {
+            background: rgba(255,255,255,.94) !important;
+            border-color: rgba(91, 140, 255, .7) !important;
+            box-shadow: 0 0 0 4px rgba(91, 140, 255, .13), 0 8px 20px rgba(55, 86, 160, .08);
+            transform: translateY(-1px);
+        }
+
+        #bookingForm label {
+            color: #465578;
+            letter-spacing: .11em;
+        }
+
+        #submitBtn {
+            background: linear-gradient(100deg, #4778ed, #735de1) !important;
+            box-shadow: 0 12px 24px rgba(62, 91, 205, .24), inset 0 1px 0 rgba(255,255,255,.24);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+
+        #submitBtn:hover {
+            transform: translateY(-2px);
+            filter: saturate(1.1);
+            box-shadow: 0 16px 30px rgba(62, 91, 205, .3), inset 0 1px 0 rgba(255,255,255,.28);
+        }
+
+        #statusBadge { animation: softPulse 2.8s ease-in-out infinite; }
+
+        body > div:first-of-type > div > div:last-child > div > div,
+        body > div:first-of-type > div > div:last-child > div:last-child {
+            background: rgba(255,255,255,.62) !important;
+            border-color: rgba(255,255,255,.72) !important;
+            box-shadow: 0 14px 30px rgba(53, 74, 131, .08), inset 0 1px 0 rgba(255,255,255,.75);
+        }
+
+        #stepsTrackerContainer > div {
+            position: relative;
+        }
+
+        #stepsTrackerContainer > div:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: 11px;
+            top: 29px;
+            width: 2px;
+            height: 18px;
+            background: linear-gradient(var(--blue), rgba(91, 140, 255, .1));
+            border-radius: 99px;
+        }
+
+        #ratingModal > div,
+        #myOrdersModal > div {
+            background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(239,245,255,.86)) !important;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 28px 70px rgba(5, 15, 55, .3);
+        }
+
+        #trackMapBtn {
+            background: linear-gradient(100deg, #536eea, #865de0) !important;
+            box-shadow: 0 10px 22px rgba(82, 93, 202, .22);
+        }
+
+        @media (max-width: 640px) {
+            body { padding: .7rem !important; }
+            body > div:first-of-type { border-radius: 1.5rem !important; }
+            body > div:first-of-type > header { padding: 1rem !important; }
+            body > div:first-of-type > header > div:first-child > span:last-child {
+                font-size: 1rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-900 min-h-screen p-4 md:p-8 flex items-center justify-center font-sans">
 

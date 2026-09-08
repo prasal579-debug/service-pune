@@ -4,159 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gharmitra.online - Secure Login & Signup</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
             emailjs.init("PfAaODZ_GPiBPHvOi"); 
         })();
     </script>
-
     <style>
         body { 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: linear-gradient(-45deg, #0f172a, #1e3a8a, #1e1b4b, #312e81);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            font-family: 'Poppins', sans-serif; 
+            background-color: #e0e5ec;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Neomorphism Custom Classes */
+        .neo-box {
+            background: #e0e5ec;
+            box-shadow: 9px 9px 18px #a3b1c6, -9px -9px 18px #ffffff;
+            border-radius: 24px;
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        .neo-box-sm {
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            border-radius: 12px;
         }
 
-        .glass-header {
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .custom-input {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(243, 244, 246, 0.8);
-        }
-
-        .custom-input:focus {
-            background: #ffffff;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.25);
-        }
-
-        .btn-glow-blue {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.5);
+        .neo-input {
+            background: #e0e5ec;
+            box-shadow: inset 4px 4px 8px #a3b1c6, inset -4px -4px 8px #ffffff;
+            border: none;
             transition: all 0.3s ease;
         }
 
-        .btn-glow-blue:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -4px rgba(37, 99, 235, 0.7);
+        .neo-input:focus {
+            box-shadow: inset 6px 6px 10px #a3b1c6, inset -6px -6px 10px #ffffff;
         }
 
-        .btn-glow-yellow {
-            background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
-            box-shadow: 0 8px 20px -4px rgba(234, 179, 8, 0.4);
-            transition: all 0.3s ease;
+        .neo-btn {
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            transition: all 0.2s ease;
         }
 
-        .btn-glow-yellow:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -4px rgba(234, 179, 8, 0.6);
+        .neo-btn:active {
+            box-shadow: inset 4px 4px 8px #a3b1c6, inset -4px -4px 8px #ffffff;
         }
 
-        .tab-active-customer {
-            background: #2563eb !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        .neo-btn-primary {
+            background: linear-gradient(145deg, #20419e, #1b3785);
+            box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            color: white;
         }
 
-        .tab-active-worker {
-            background: #eab308 !important;
-            color: #0f172a !important;
-            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35);
+        .neo-btn-primary:active {
+            background: #1e3a8a;
+            box-shadow: inset 3px 3px 6px #152962, inset -3px -3px 6px #274bb2;
+        }
+
+        .neo-btn-yellow {
+            background: linear-gradient(145deg, #eab308, #ca8a04);
+            box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            color: #111827;
+        }
+
+        .neo-btn-yellow:active {
+            background: #ca8a04;
+            box-shadow: inset 3px 3px 6px #936203, inset -3px -3px 6px #feb205;
+        }
+
+        .neo-tab-active {
+            background: #e0e5ec;
+            box-shadow: inset 3px 3px 6px #a3b1c6, inset -3px -3px 6px #ffffff;
+        }
+
+        .neo-header {
+            background: #e0e5ec;
+            box-shadow: 0px 5px 15px #a3b1c6;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between text-gray-800 antialiased">
+<body class="min-h-screen flex flex-col justify-between text-gray-700">
 
     <!-- Header -->
-    <header class="w-full py-4 px-6 flex justify-between items-center glass-header sticky top-0 z-50">
+    <header class="w-full py-4 px-6 flex justify-between items-center neo-header">
         <div class="flex items-center space-x-3">
-            <div class="bg-white/90 p-2.5 rounded-2xl shadow-md font-extrabold text-blue-600 text-xl border border-white/50">🏠</div>
+            <div class="neo-box-sm p-3 font-bold text-blue-600 text-xl">🏠 GK</div>
             <div>
-                <h1 class="text-white text-2xl font-black tracking-wide">GHARMITRA<span class="text-yellow-400">.online</span></h1>
-                <p class="text-[11px] font-medium text-blue-200 tracking-wider">PUNE CITY SERVICES</p>
+                <h1 class="text-gray-800 text-2xl font-bold tracking-wide">GHARMITRA<span class="text-yellow-600">.online</span></h1>
+                <p class="text-xs text-gray-500 font-medium">Pune City Services</p>
             </div>
         </div>
         <div>
-            <span id="location-status" class="text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 px-3.5 py-1.5 rounded-full font-bold shadow-lg flex items-center gap-1">
-                📍 Pune Verified
-            </span>
+            <span id="location-status" class="text-xs neo-box-sm text-gray-800 px-4 py-2 font-semibold">📍 Pune Verified</span>
         </div>
     </header>
 
-    <!-- Main Card -->
-    <main class="flex-grow flex items-center justify-center px-4 py-8">
-        <div class="max-w-md w-full glass-card p-8 rounded-3xl transition-all duration-300">
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10">
+        <div class="max-w-md w-full neo-box p-8">
             
-            <!-- Role Selector Tabs -->
-            <div class="flex mb-6 bg-gray-200/70 p-1.5 rounded-2xl backdrop-blur-sm border border-gray-300/50">
-                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 tab-active-customer">Customer</button>
-                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-600 hover:text-gray-900 transition-all duration-300">Worker</button>
+            <!-- Customer / Worker Tabs -->
+            <div class="flex mb-8 p-1.5 neo-input rounded-2xl">
+                <button onclick="setRole('customer')" id="tabCustomer" class="flex-1 py-2.5 text-sm font-bold rounded-xl neo-btn-primary transition">Customer</button>
+                <button onclick="setRole('worker')" id="tabWorker" class="flex-1 py-2.5 text-sm font-bold rounded-xl text-gray-600 transition">Worker</button>
             </div>
 
             <!-- Title -->
             <div class="text-center mb-6">
-                <h2 id="formTitle" class="text-2xl font-black text-gray-800 tracking-tight">Customer Signup</h2>
-                <p id="formSub" class="text-xs font-medium text-gray-500 mt-1">Create account using Email OTP</p>
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800">Customer Signup</h2>
+                <p id="formSub" class="text-xs text-gray-500 mt-1">Create account using Email OTP</p>
             </div>
 
             <!-- Status Msg -->
-            <div id="statusMsg" class="hidden mb-5 p-3.5 rounded-2xl text-center text-xs font-bold transition-all"></div>
+            <div id="statusMsg" class="hidden mb-4 p-3 rounded-xl text-center text-xs font-semibold"></div>
 
             <!-- Form -->
-            <form id="authForm" onsubmit="handleSubmit(event)" class="space-y-4">
+            <form id="authForm" onsubmit="handleSubmit(event)" class="space-y-5">
                 
                 <div id="fullNameContainer">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Full Name</label>
-                    <input type="text" id="fullName" placeholder="Enter full name" class="w-full p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium custom-input">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2 ml-1">Full Name:</label>
+                    <input type="text" id="fullName" placeholder="Enter full name" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none text-gray-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Mobile Number</label>
-                    <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium custom-input">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2 ml-1">Mobile Number:</label>
+                    <input type="tel" id="mobile" placeholder="10-digit mobile number" pattern="[0-9]{10}" required class="w-full p-3.5 rounded-xl neo-input text-sm outline-none text-gray-700">
                 </div>
 
                 <div id="emailContainer">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Email ID</label>
-                    <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium custom-input">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2 ml-1">Email ID:</label>
+                    <input type="email" id="email" placeholder="E.g., name@gmail.com" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none text-gray-700">
                 </div>
 
                 <div id="passwordContainer">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Password</label>
-                    <input type="password" id="password" placeholder="Enter password" minlength="6" class="w-full p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium custom-input">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2 ml-1">Password:</label>
+                    <input type="password" id="password" placeholder="Enter password" minlength="6" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none text-gray-700">
                 </div>
 
                 <div id="workTypeContainer" class="hidden">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Work Expertise</label>
-                    <select id="workType" class="w-full p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm font-medium bg-white custom-input">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2 ml-1">Work Expertise (Services):</label>
+                    <select id="workType" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none text-gray-700">
                         <option value="Cleaning">🧹 Cleaning</option>
                         <option value="Electrician">⚡ Electrician</option>
                         <option value="Plumbing">🪠 Plumbing</option>
@@ -176,45 +166,45 @@
                 </div>
 
                 <div id="forgotPasswordLinkContainer" class="hidden text-right">
-                    <button type="button" onclick="showForgotPasswordUI()" class="text-xs text-blue-600 font-bold hover:underline">Forgot Password?</button>
+                    <button type="button" onclick="showForgotPasswordUI()" class="text-xs text-blue-600 font-semibold hover:underline">Forgot Password?</button>
                 </div>
 
-                <button type="submit" id="submitBtn" class="w-full text-white font-bold py-3.5 rounded-2xl transition duration-300 btn-glow-blue tracking-wide text-sm mt-2">
+                <button type="submit" id="submitBtn" class="w-full neo-btn-primary font-bold py-3.5 rounded-xl transition duration-300">
                     Send OTP & Verify
                 </button>
 
-                <!-- OTP UI -->
-                <div id="otpContainer" class="hidden space-y-3 pt-3 border-t border-gray-200">
-                    <label id="otpLabel" class="block text-xs font-bold text-blue-600 uppercase tracking-wider">Enter OTP sent to Email:</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono text-center tracking-widest custom-input">
-                        <button type="button" id="verifyOtpBtn" onclick="verifyOTPAndRegister(event)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 rounded-2xl text-xs transition shadow-lg">Verify</button>
+                <!-- OTP Section -->
+                <div id="otpContainer" class="hidden space-y-3 pt-3">
+                    <label id="otpLabel" class="block text-xs font-semibold text-blue-600">Enter OTP sent to your Email:</label>
+                    <div class="flex space-x-3">
+                        <input type="text" id="otpInput" placeholder="6-digit OTP" class="flex-1 p-3.5 rounded-xl neo-input text-sm font-mono text-center outline-none">
+                        <button type="button" id="verifyOtpBtn" onclick="verifyOTPAndRegister(event)" class="neo-btn bg-emerald-600 text-white font-bold px-4 rounded-xl text-xs transition">Verify & Signup</button>
                     </div>
 
                     <div class="flex justify-between items-center text-xs pt-1">
-                        <button type="button" onclick="resendOTP()" id="resendBtn" class="text-blue-600 hover:underline font-bold">🔄 Resend OTP</button>
+                        <button type="button" onclick="resendOTP()" id="resendBtn" class="text-blue-600 hover:underline font-semibold">🔄 Resend OTP</button>
                     </div>
                 </div>
 
-                <!-- Reset Password UI -->
-                <div id="newPasswordContainer" class="hidden space-y-3 pt-3 border-t border-gray-200">
+                <!-- Reset Password Section -->
+                <div id="newPasswordContainer" class="hidden space-y-3 pt-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">New Password:</label>
-                        <input type="password" id="newPassword" placeholder="Enter new password" minlength="6" class="w-full p-3.5 border rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-input">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">New Password:</label>
+                        <input type="password" id="newPassword" placeholder="Enter new password" minlength="6" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Confirm New Password:</label>
-                        <input type="password" id="confirmNewPassword" placeholder="Re-enter new password" minlength="6" class="w-full p-3.5 border rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-input">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password:</label>
+                        <input type="password" id="confirmNewPassword" placeholder="Re-enter new password" minlength="6" class="w-full p-3.5 rounded-xl neo-input text-sm outline-none">
                     </div>
-                    <button type="button" onclick="updateNewPassword()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-lg transition">
+                    <button type="button" onclick="updateNewPassword()" class="w-full neo-btn bg-emerald-600 text-white font-bold py-3.5 rounded-xl transition">
                         Update Password
                     </button>
                 </div>
             </form>
 
             <div class="text-center mt-6">
-                <p id="toggleText" class="text-xs font-semibold text-gray-600">
-                    Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-extrabold hover:underline">Sign In</a>
+                <p id="toggleText" class="text-xs text-gray-600">
+                    Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>
                 </p>
             </div>
 
@@ -222,11 +212,10 @@
     </main>
 
     <!-- Footer -->
-    <footer class="text-center py-4 text-blue-200/80 text-xs font-medium tracking-wide">
+    <footer class="text-center py-4 text-gray-500 text-xs neo-header">
         &copy; 2026 Gharmitra.online | Pune City
     </footer>
 
-    <!-- Script JavaScript (Existing Logic Intact) -->
     <script>
         let currentRole = 'customer'; 
         let isSignupMode = true;      
@@ -241,11 +230,11 @@
             const tabW = document.getElementById('tabWorker');
 
             if (role === 'customer') {
-                tabC.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 tab-active-customer";
-                tabW.className = "flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-600 hover:text-gray-900 transition-all duration-300";
+                tabC.className = "flex-1 py-2.5 text-sm font-bold rounded-xl neo-btn-primary transition";
+                tabW.className = "flex-1 py-2.5 text-sm font-bold rounded-xl text-gray-600 transition";
             } else {
-                tabW.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 tab-active-worker";
-                tabC.className = "flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-600 hover:text-gray-900 transition-all duration-300";
+                tabW.className = "flex-1 py-2.5 text-sm font-bold rounded-xl neo-btn-yellow transition";
+                tabC.className = "flex-1 py-2.5 text-sm font-bold rounded-xl text-gray-600 transition";
             }
             if(!isForgotPasswordMode) updateFormUI();
         }
@@ -293,8 +282,8 @@
                 passwordContainer.classList.remove('hidden');
                 passwordInput.required = true;
                 forgotLinkContainer.classList.add('hidden');
-                btn.className = currentRole === 'customer' ? "w-full text-white font-bold py-3.5 rounded-2xl transition duration-300 btn-glow-blue tracking-wide text-sm mt-2" : "w-full text-gray-900 font-bold py-3.5 rounded-2xl transition duration-300 btn-glow-yellow tracking-wide text-sm mt-2";
-                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-extrabold hover:underline">Sign In</a>`;
+                btn.className = currentRole === 'customer' ? "w-full neo-btn-primary font-bold py-3.5 rounded-xl transition" : "w-full neo-btn-yellow font-bold py-3.5 rounded-xl transition";
+                toggleTxt.innerHTML = `Already have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign In</a>`;
             } else {
                 title.innerText = roleName + " Sign In";
                 sub.innerText = "Enter Mobile & Password to Sign In";
@@ -306,8 +295,8 @@
                 passwordContainer.classList.remove('hidden');
                 passwordInput.required = true;
                 forgotLinkContainer.classList.remove('hidden');
-                btn.className = currentRole === 'customer' ? "w-full text-white font-bold py-3.5 rounded-2xl transition duration-300 btn-glow-blue tracking-wide text-sm mt-2" : "w-full text-gray-900 font-bold py-3.5 rounded-2xl transition duration-300 btn-glow-yellow tracking-wide text-sm mt-2";
-                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-extrabold hover:underline">Sign Up</a>`;
+                btn.className = currentRole === 'customer' ? "w-full neo-btn-primary font-bold py-3.5 rounded-xl transition" : "w-full neo-btn-yellow font-bold py-3.5 rounded-xl transition";
+                toggleTxt.innerHTML = `Don't have an account? <a href="#" onclick="toggleMode()" class="text-blue-600 font-bold hover:underline">Sign Up</a>`;
             }
         }
 
@@ -318,9 +307,9 @@
                 return;
             }
             el.innerText = msg;
-            el.className = "mb-5 p-3.5 rounded-2xl text-center text-xs font-bold transition-all " + 
-                (type === 'success' ? "bg-emerald-100 border border-emerald-300 text-emerald-800" : 
-                 type === 'error' ? "bg-rose-100 border border-rose-300 text-rose-800" : "bg-blue-100 border border-blue-300 text-blue-800");
+            el.className = "mb-4 p-3 rounded-xl text-center text-xs font-semibold neo-box-sm " + 
+                (type === 'success' ? "text-green-700" : 
+                 type === 'error' ? "text-red-600" : "text-blue-700");
             el.classList.remove('hidden');
         }
 

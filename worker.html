@@ -401,6 +401,7 @@ let currentWorkerUid = null;
 let currentWorkerService = "Cleaning"; 
 let activeChatOrderId = null;
 let locationWatchId = null;
+let locationSharingOrderId = null;
 let earningsChartInstance = null;
 
 // Page Load Var Local Session Check
@@ -412,6 +413,9 @@ function loadLocalWorkerSession() {
     let session = localStorage.getItem('current_user_session');
     if (session) {
         let userData = JSON.parse(session);
+        if (!currentWorkerUid) {
+            currentWorkerUid = getLocalWorkerId();
+        }
         const name = userData.fullName || userData.name || "Worker";
         const service = userData.workType || userData.service || "Cleaning";
         updateWorkerUI({
@@ -421,6 +425,95 @@ function loadLocalWorkerSession() {
             workerIndex: userData.mobile ? userData.mobile.slice(-6) : 100001
         });
     }
+}
+
+function getLocalWorkerId() {
+    const session = JSON.parse(localStorage.getItem('current_user_session') || '{}');
+    return session.mobile ? "local_worker_" + session.mobile : null;
+}
+
+function getCurrentWorkerMobile() {
+    const session = JSON.parse(localStorage.getItem('current_user_session') || '{}');
+    return session.mobile || "";
+}
+
+function getActiveOrderForCurrentWorker() {
+    if (!allOrdersData || !currentWorkerUid) return null;
+
+    return Object.entries(allOrdersData)
+        .map(([orderId, order]) => ({ orderId, order }))
+        .find(({ order }) =>
+            order &&
+            (order.status === 'Accepted' || order.status === 'On The Way') &&
+            (
+                order.workerUid === currentWorkerUid ||
+                (order.workerMobile && order.workerMobile === getCurrentWorkerMobile())
+            )
+        ) || null;
+}
+
+function publishWorkerLocation(orderId, position) {
+    const coords = position.coords;
+    return database.ref("orders/" + orderId + "/workerLocation").set({
+        lat: Number(coords.latitude.toFixed(6)),
+        lng: Number(coords.longitude.toFixed(6)),
+        accuracy: Math.round(coords.accuracy || 0),
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+function startLocationSharing(orderId) {
+    if (!orderId || locationSharingOrderId === orderId) return;
+
+    if (!navigator.geolocation) {
+        alert("तुमच्या device वर location सुविधा उपलब्ध नाही.");
+        return;
+    }
+
+    stopLocationSharing(locationSharingOrderId, false);
+    locationSharingOrderId = orderId;
+
+    const handleLocationError = (error) => {
+        console.warn("Worker location error:", error.message);
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        position => publishWorkerLocation(orderId, position).catch(console.error),
+        handleLocationError,
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+
+    locationWatchId = navigator.geolocation.watchPosition(
+        position => publishWorkerLocation(orderId, position).catch(console.error),
+        handleLocationError,
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+}
+
+function stopLocationSharing(orderId, clearRemoteLocation = false) {
+    if (locationWatchId !== null) {
+        navigator.geolocation?.clearWatch(locationWatchId);
+        locationWatchId = null;
+    }
+
+    const orderToClear = orderId || locationSharingOrderId;
+    locationSharingOrderId = null;
+
+    if (clearRemoteLocation && orderToClear) {
+        return database.ref("orders/" + orderToClear + "/workerLocation").remove();
+    }
+
+    return Promise.resolve();
+}
+
+function releaseActiveOrderLock(orderId) {
+    if (!currentWorkerUid) return Promise.resolve();
+
+    return database.ref("workers/" + currentWorkerUid + "/activeOrderId").transaction(
+        activeOrderId => activeOrderId === orderId ? null : activeOrderId
+    ).catch(error => {
+        console.warn("Could not release active order lock:", error);
+    });
 }
 
 auth.onAuthStateChanged((user) => {
@@ -451,7 +544,9 @@ auth.onAuthStateChanged((user) => {
                 };
 
                 if (!workerSnap.exists()) {
-                    workerRef.set(combinedData);
+                    // Do not overwrite activeOrderId if an order was accepted
+                    // while the worker profile was being initialized.
+                    workerRef.update(combinedData);
                 }
 
                 updateWorkerUI(combinedData);
@@ -692,8 +787,9 @@ function renderJobs() {
 
     jobsContainer.innerHTML = "";
     const keys = Object.keys(allOrdersData).reverse();
+    const activeOrderEntry = getActiveOrderForCurrentWorker();
+    const activeOrderId = activeOrderEntry ? activeOrderEntry.orderId : null;
     let pendingCount = 0;
-    let activeTaskFound = false;
 
     keys.forEach(key => {
         const item = allOrdersData[key];
@@ -704,7 +800,9 @@ function renderJobs() {
         const workerService = (currentWorkerService || "").replace(/^\/+/, '').trim().toLowerCase();
         const isServiceMatch = (jobService === workerService);
 
-        if (item.status === 'Pending' && isAreaMatch && isServiceMatch) {
+        // An assigned worker must finish the active order before seeing any
+        // other pending order, including orders from the same area.
+        if (!activeOrderId && item.status === 'Pending' && isAreaMatch && isServiceMatch) {
             pendingCount++;
             const jobCard = document.createElement('div');
             jobCard.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl hover:border-blue-400 transition shadow-sm space-y-3";
@@ -727,8 +825,7 @@ function renderJobs() {
             jobsContainer.appendChild(jobCard);
         }
 
-        if ((item.status === 'Accepted' || item.status === 'On The Way') && !activeTaskFound && item.workerUid === currentWorkerUid) {
-            activeTaskFound = true;
+        if ((item.status === 'Accepted' || item.status === 'On The Way') && key === activeOrderId) {
             const activeCard = document.createElement('div');
             activeCard.className = "bg-white p-5 rounded-2xl border border-emerald-200 shadow-md space-y-4";
             activeCard.innerHTML = `
@@ -751,23 +848,113 @@ function renderJobs() {
             <button onclick="updateStatus('${key}', 'Completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">✓ Completed</button>
             </div>`;
             acceptedContainer.appendChild(activeCard);
+
+            if (item.status === 'On The Way') {
+                startLocationSharing(key);
+            }
         }
     });
+
+    if (activeOrderId) {
+        pendingCount = 0;
+        if (activeOrderEntry.order.status === 'Accepted') {
+            stopLocationSharing(activeOrderId, false);
+        }
+    }
+
     jobCountBadge.innerText = `${pendingCount} New Jobs`;
 }
 
 function acceptOrder(orderId) {
     if (!currentWorkerUid) {
-        currentWorkerUid = "local_worker_" + Date.now();
+        currentWorkerUid = getLocalWorkerId();
     }
-    database.ref("orders/" + orderId).update({
-        status: "Accepted", workerUid: currentWorkerUid
-    }).then(() => alert("तुम्ही हे काम यशस्वीरीत्या स्वीकारले आहे!"));
+    if (!currentWorkerUid) {
+        alert("Order accept करण्यासाठी आधी Worker account ने login करा.");
+        return;
+    }
+
+    const activeOrder = getActiveOrderForCurrentWorker();
+    if (activeOrder) {
+        alert("तुमच्याकडे आधीच एक active order आहे. ती पूर्ण केल्यानंतरच नवीन order दिसेल.");
+        return;
+    }
+
+    const activeLockRef = database.ref("workers/" + currentWorkerUid + "/activeOrderId");
+    activeLockRef.transaction(
+        activeOrderId => activeOrderId || orderId,
+        (lockError, lockCommitted) => {
+            if (lockError) {
+                alert("Order accept करताना अडचण आली. पुन्हा प्रयत्न करा.");
+                return;
+            }
+
+            if (!lockCommitted) {
+                alert("तुमच्याकडे आधीच एक active order आहे. ती पूर्ण केल्यानंतरच नवीन order दिसेल.");
+                renderJobs();
+                return;
+            }
+
+            database.ref("orders/" + orderId).transaction(
+                order => {
+                    if (!order || order.status !== 'Pending' || order.workerUid) {
+                        return;
+                    }
+
+                    return {
+                        ...order,
+                        status: "Accepted",
+                        workerUid: currentWorkerUid,
+                        workerMobile: getCurrentWorkerMobile(),
+                        acceptedAt: firebase.database.ServerValue.TIMESTAMP
+                    };
+                },
+                (orderError, orderCommitted) => {
+                    if (orderError || !orderCommitted) {
+                        releaseActiveOrderLock(orderId);
+                        alert(orderError ? "Order accept करताना अडचण आली." : "ही order दुसऱ्या worker ने आधीच accept केली आहे.");
+                        return;
+                    }
+
+                    alert("तुम्ही हे काम यशस्वीरीत्या स्वीकारले आहे!");
+                }
+            );
+        }
+    );
 }
 
 function updateStatus(orderId, newStatus) {
-    database.ref("orders/" + orderId).update({ status: newStatus }).then(() => {
+    const activeOrder = getActiveOrderForCurrentWorker();
+    if (!activeOrder || activeOrder.orderId !== orderId) {
+        alert("ही order तुमची active order नाही.");
+        return;
+    }
+
+    const updateOrder = newStatus === 'Completed'
+        ? stopLocationSharing(orderId, true).then(() =>
+            database.ref("orders/" + orderId).update({
+                status: newStatus,
+                workerLocation: null,
+                completedAt: firebase.database.ServerValue.TIMESTAMP
+            })
+        )
+        : database.ref("orders/" + orderId).update({ status: newStatus });
+
+    updateOrder.then(() => {
+        if (newStatus === 'On The Way') {
+            startLocationSharing(orderId);
+        }
+
+        const lockRelease = newStatus === 'Completed'
+            ? releaseActiveOrderLock(orderId)
+            : Promise.resolve();
+
+        return lockRelease;
+    }).then(() => {
         alert("स्टेटस अपडेट केले: " + newStatus);
+    }).catch(error => {
+        console.error("Status update error:", error);
+        alert("स्टेटस अपडेट करताना अडचण आली.");
     });
 }
 </script>

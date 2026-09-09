@@ -186,7 +186,8 @@
         }
 
         #ratingModal > div,
-        #myOrdersModal > div {
+        #myOrdersModal > div,
+        #customerChatModal > div {
             background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(239,245,255,.86)) !important;
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
@@ -196,6 +197,76 @@
         #trackMapBtn {
             background: linear-gradient(100deg, #536eea, #865de0) !important;
             box-shadow: 0 10px 22px rgba(82, 93, 202, .22);
+        }
+
+        .customer-live-card {
+            border: 1px solid rgba(91, 140, 255, .22);
+            border-radius: 1.35rem;
+            padding: .85rem;
+            background: linear-gradient(145deg, rgba(240, 247, 255, .92), rgba(255,255,255,.72));
+            box-shadow: 0 16px 28px rgba(36, 71, 150, .12), inset 0 1px 0 rgba(255,255,255,.9);
+        }
+
+        .customer-live-map-shell {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            border: 1px solid rgba(91, 140, 255, .28);
+            box-shadow: 0 12px 24px rgba(37, 67, 142, .15);
+            background: #dfe8f5;
+        }
+
+        .live-map-chip {
+            position: absolute;
+            z-index: 500;
+            top: .75rem;
+            left: .75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .45rem .65rem;
+            border-radius: 999px;
+            color: #17213c;
+            background: rgba(255,255,255,.9);
+            box-shadow: 0 8px 18px rgba(20, 42, 93, .18);
+            font-size: .64rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .live-dot {
+            width: .45rem;
+            height: .45rem;
+            border-radius: 999px;
+            background: #ef4444;
+            box-shadow: 0 0 0 5px rgba(239,68,68,.14);
+            animation: liveDotPulse 1.8s ease-in-out infinite;
+        }
+
+        .tracking-eta-card {
+            position: absolute;
+            z-index: 500;
+            left: .75rem;
+            bottom: .75rem;
+            min-width: 124px;
+            padding: .65rem .8rem;
+            border-radius: .9rem;
+            background: rgba(255,255,255,.94);
+            box-shadow: 0 10px 22px rgba(20, 42, 93, .2);
+        }
+
+        .tracking-eta-card strong {
+            display: block;
+            color: #111827;
+            font-size: 1.45rem;
+            line-height: 1.1;
+            letter-spacing: -.04em;
+        }
+
+        @keyframes liveDotPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.18); opacity: .72; }
         }
 
         #workerLiveMap {
@@ -387,21 +458,47 @@
                             <p><strong>Address:</strong> <span id="statusAddress">-</span></p>
                         </div>
 
-                        <!-- Live Moving Tracking Map Container (Swiggy Style) -->
+                        <!-- Swiggy-style live tracking card -->
                         <div id="mapTrackingContainer" class="hidden pt-1">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
-                                    Worker live location
-                                </span>
-                                <span id="workerLocationUpdated" class="text-[10px] text-slate-400">Location waiting...</span>
+                            <div class="customer-live-card">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <span class="text-xs font-black tracking-[.12em] text-slate-900 flex items-center gap-2">
+                                        <span class="live-dot"></span>
+                                        LIVE TRACKING
+                                    </span>
+                                    <span id="workerLocationUpdated" class="text-[10px] font-bold text-indigo-600">Location waiting...</span>
+                                </div>
+
+                                <div class="customer-live-map-shell">
+                                    <span class="live-map-chip"><i class="fa-solid fa-truck text-indigo-600"></i> Worker is moving</span>
+                                    <div id="workerLiveMap" aria-label="Worker live location map"></div>
+                                    <div class="tracking-eta-card">
+                                        <span class="text-[10px] font-bold text-slate-500">Estimated time</span>
+                                        <strong id="workerEta">--</strong>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-2 mt-3">
+                                    <span id="workerLocationAccuracy" class="text-[10px] text-slate-500">Worker location मिळत आहे...</span>
+                                    <a id="trackMapBtn" href="#" target="_blank" rel="noopener" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition flex items-center justify-center gap-2 shadow-sm shrink-0">
+                                        <i class="fa-solid fa-diamond-turn-right"></i> Open directions
+                                    </a>
+                                </div>
                             </div>
-                            <div id="workerLiveMap" aria-label="Worker live location map"></div>
-                            <div class="flex items-center justify-between gap-2 mt-2">
-                                <span id="workerLocationAccuracy" class="text-[10px] text-slate-500">Worker location मिळत आहे...</span>
-                                <a id="trackMapBtn" href="#" target="_blank" rel="noopener" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition flex items-center justify-center gap-2 shadow-sm shrink-0">
-                                    <i class="fa-solid fa-diamond-turn-right"></i> Open directions
-                                </a>
+                        </div>
+
+                        <div id="customerChatAction" class="hidden border border-blue-100 bg-blue-50/70 rounded-2xl p-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-comments text-blue-600"></i>
+                                        Chat with Worker
+                                    </p>
+                                    <p class="text-[10px] text-slate-500 mt-1">Order accepted झाल्यावर workerशी थेट बोला.</p>
+                                </div>
+                                <button onclick="openCustomerChatModal(currentOrderId)" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-message"></i> Chat
+                                </button>
                             </div>
                         </div>
 
@@ -490,6 +587,28 @@
         </div>
     </div>
 
+    <!-- Customer Chat Modal -->
+    <div id="customerChatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-200 flex flex-col h-[500px]">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-blue-600"></i> Chat with Worker
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Order accepted झाल्यापासून live chat उपलब्ध आहे.</p>
+                </div>
+                <button onclick="closeCustomerChatModal()" class="text-slate-400 hover:text-slate-700 font-bold text-base w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200">✕</button>
+            </div>
+            <div id="customerChatMessagesContainer" class="flex-1 overflow-y-auto space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <p class="text-center text-slate-400 py-4">मेसेज लोड होत आहेत...</p>
+            </div>
+            <div class="mt-3 flex gap-2">
+                <input type="text" id="customerChatInputMsg" placeholder="Worker ला मेसेज लिहा..." class="flex-1 bg-slate-100 border border-slate-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="sendCustomerChatMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">पाठवा</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Past Orders Modal -->
     <div id="myOrdersModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
@@ -530,6 +649,8 @@
         let workerLocationPath = null;
         let workerPathPoints = [];
         let selectedRating = 5;
+        let activeCustomerChatOrderId = null;
+        let activeCustomerChatListener = null;
 
         document.getElementById('bookingDate').valueAsDate = new Date();
 
@@ -575,11 +696,15 @@
             if (workerLocationPath) {
                 workerLocationPath.setLatLngs([]);
             }
+
+            const etaEl = document.getElementById('workerEta');
+            if (etaEl) etaEl.innerText = "--";
         }
 
         function updateWorkerLiveLocation(location) {
             const locationMeta = document.getElementById('workerLocationUpdated');
             const accuracyMeta = document.getElementById('workerLocationAccuracy');
+            const etaEl = document.getElementById('workerEta');
 
             if (!location || !Number.isFinite(Number(location.lat)) || !Number.isFinite(Number(location.lng))) {
                 locationMeta.innerText = "Location waiting...";
@@ -624,6 +749,11 @@
             locationMeta.innerText = Number.isFinite(updatedAt) && updatedAt > 0
                 ? "Updated " + new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : "Live location";
+            if (etaEl) {
+                etaEl.innerText = Number.isFinite(Number(location.etaMinutes))
+                    ? Math.max(1, Math.round(Number(location.etaMinutes))) + " min"
+                    : "Live";
+            }
             accuracyMeta.innerText = location.accuracy
                 ? "Accuracy ±" + Math.round(Number(location.accuracy)) + " m"
                 : "Live GPS location";
@@ -690,6 +820,109 @@
         function closeRatingModal() {
             document.getElementById('ratingModal').classList.remove('flex');
             document.getElementById('ratingModal').classList.add('hidden');
+        }
+
+        function escapeChatText(value) {
+            return String(value || '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[character]));
+        }
+
+        function renderCustomerChatMessages(messages) {
+            const chatBox = document.getElementById('customerChatMessagesContainer');
+            if (!chatBox) return;
+
+            chatBox.innerHTML = "";
+            const messageList = messages
+                ? Object.values(messages).sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0))
+                : [];
+
+            if (!messageList.length) {
+                chatBox.innerHTML = '<p class="text-center text-slate-400 py-4">अद्याप कोणताही मेसेज नाही.</p>';
+                return;
+            }
+
+            messageList.forEach(message => {
+                const isMe = message.sender === 'customer';
+                const time = Number(message.timestamp)
+                    ? new Date(Number(message.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : '';
+                chatBox.innerHTML += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[78%] p-2.5 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-md' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-md'}">
+                        <p class="break-words">${escapeChatText(message.text)}</p>
+                        ${time ? `<span class="block text-[9px] mt-1 ${isMe ? 'text-blue-100' : 'text-slate-400'}">${time}</span>` : ''}
+                    </div>
+                </div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function openCustomerChatModal(orderId) {
+            if (!orderId) return;
+
+            database.ref('orders/' + orderId).once('value').then(snapshot => {
+                const order = snapshot.val();
+                if (!order || !['Accepted', 'On The Way'].includes(order.status)) {
+                    alert("Worker ने order accept केल्यानंतरच chat सुरू करता येईल.");
+                    return;
+                }
+
+                if (activeCustomerChatOrderId && activeCustomerChatListener) {
+                    database.ref('orders/' + activeCustomerChatOrderId + '/chats')
+                        .off('value', activeCustomerChatListener);
+                }
+
+                activeCustomerChatOrderId = orderId;
+                document.getElementById('customerChatModal').classList.remove('hidden');
+                document.getElementById('customerChatModal').classList.add('flex');
+
+                const chatRef = database.ref('orders/' + orderId + '/chats');
+                activeCustomerChatListener = snapshot => renderCustomerChatMessages(snapshot.val());
+                chatRef.on('value', activeCustomerChatListener);
+                document.getElementById('customerChatInputMsg')?.focus();
+            });
+        }
+
+        function closeCustomerChatModal() {
+            if (activeCustomerChatOrderId && activeCustomerChatListener) {
+                database.ref('orders/' + activeCustomerChatOrderId + '/chats')
+                    .off('value', activeCustomerChatListener);
+            }
+            activeCustomerChatOrderId = null;
+            activeCustomerChatListener = null;
+            document.getElementById('customerChatModal').classList.remove('flex');
+            document.getElementById('customerChatModal').classList.add('hidden');
+        }
+
+        function sendCustomerChatMessage() {
+            const input = document.getElementById('customerChatInputMsg');
+            const text = input?.value.trim();
+            if (!text || !activeCustomerChatOrderId) return;
+
+            database.ref('orders/' + activeCustomerChatOrderId).once('value').then(snapshot => {
+                const order = snapshot.val();
+                if (!order || !['Accepted', 'On The Way'].includes(order.status)) {
+                    closeCustomerChatModal();
+                    alert("ही order पूर्ण झाली आहे. Chat बंद करण्यात आला आहे.");
+                    return;
+                }
+
+                return database.ref('orders/' + activeCustomerChatOrderId + '/chats').push({
+                    sender: 'customer',
+                    senderName: order.customerName || 'Customer',
+                    text,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            }).then(() => {
+                if (input) input.value = "";
+            }).catch(error => {
+                console.error("Customer chat error:", error);
+                alert("मेसेज पाठवताना अडचण आली.");
+            });
         }
 
         async function handleFormSubmit(e) {
@@ -783,6 +1016,7 @@
                 const ratingDisplay = document.getElementById('statusWorkerRating');
                 const mapContainer = document.getElementById('mapTrackingContainer');
                 const trackMapBtn = document.getElementById('trackMapBtn');
+                const customerChatAction = document.getElementById('customerChatAction');
 
                 let workerInfo = "Verified Worker Assigned";
                 if (data.workerMobile) {
@@ -808,6 +1042,14 @@
                     });
                 } else {
                     ratingDisplay.innerText = "Not assigned yet";
+                }
+
+                const canChat = data.status === 'Accepted' || data.status === 'On The Way';
+                if (customerChatAction) {
+                    customerChatAction.classList.toggle('hidden', !canChat);
+                }
+                if (!canChat && activeCustomerChatOrderId) {
+                    closeCustomerChatModal();
                 }
 
                 // Swiggy-style live moving location handling. The worker
@@ -990,4 +1232,4 @@
         }
     </script>
 </body>
-</html>   
+</html>

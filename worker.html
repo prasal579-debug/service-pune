@@ -8,6 +8,8 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <!-- Chart.js for Earnings Graph -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -154,6 +156,94 @@ body > div:first-of-type > div > div:last-child {
 #dutyToggleBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 16px 28px rgba(35, 82, 190, .26), inset 0 1px 0 rgba(255,255,255,.3);
+}
+
+.worker-live-card {
+  border: 1px solid rgba(91, 140, 255, .22);
+  border-radius: 1.35rem;
+  padding: .85rem;
+  background: linear-gradient(145deg, rgba(240, 247, 255, .9), rgba(255,255,255,.72));
+  box-shadow: 0 16px 28px rgba(36, 71, 150, .12), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.worker-live-map-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(91, 140, 255, .28);
+  box-shadow: 0 12px 24px rgba(37, 67, 142, .15);
+  background: #dfe8f5;
+}
+
+#workerTripMap {
+  height: 220px;
+  min-height: 220px;
+  z-index: 0;
+}
+
+.live-map-chip {
+  position: absolute;
+  z-index: 500;
+  top: .75rem;
+  left: .75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .65rem;
+  border-radius: 999px;
+  color: #17213c;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 8px 18px rgba(20, 42, 93, .18);
+  font-size: .64rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tracking-eta-card {
+  position: absolute;
+  z-index: 500;
+  left: .75rem;
+  bottom: .75rem;
+  min-width: 124px;
+  padding: .65rem .8rem;
+  border-radius: .9rem;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 10px 22px rgba(20, 42, 93, .2);
+}
+
+.tracking-eta-card strong {
+  display: block;
+  color: #111827;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  letter-spacing: -.04em;
+}
+
+.live-dot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 5px rgba(239,68,68,.14);
+  animation: liveDotPulse 1.8s ease-in-out infinite;
+}
+
+.worker-truck-marker {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  box-shadow: 0 0 0 6px rgba(79, 70, 229, .18), 0 6px 14px rgba(30, 41, 112, .35);
+}
+
+@keyframes liveDotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.18); opacity: .72; }
 }
 
 @media (max-width: 640px) {
@@ -403,6 +493,12 @@ let activeChatOrderId = null;
 let locationWatchId = null;
 let locationSharingOrderId = null;
 let earningsChartInstance = null;
+let workerTripMap = null;
+let workerTripMarker = null;
+let workerTripPath = null;
+let workerTripPathPoints = [];
+let workerTripLastLocation = null;
+let workerTripMapOrderId = null;
 
 // Page Load Var Local Session Check
 document.addEventListener("DOMContentLoaded", () => {
@@ -452,14 +548,127 @@ function getActiveOrderForCurrentWorker() {
         ) || null;
 }
 
+function ensureWorkerTripMap() {
+    const mapElement = document.getElementById('workerTripMap');
+    if (!mapElement) return;
+
+    if (workerTripMap) {
+        setTimeout(() => workerTripMap.invalidateSize(), 50);
+        return;
+    }
+
+    workerTripMap = L.map(mapElement, {
+        zoomControl: true,
+        attributionControl: true
+    }).setView([18.5204, 73.8567], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(workerTripMap);
+
+    workerTripPath = L.polyline(workerTripPathPoints, {
+        color: '#6366f1',
+        weight: 4,
+        opacity: 0.72
+    }).addTo(workerTripMap);
+
+    setTimeout(() => workerTripMap?.invalidateSize(), 100);
+}
+
+function destroyWorkerTripMap() {
+    if (workerTripMap) {
+        workerTripMap.remove();
+    }
+    workerTripMap = null;
+    workerTripMarker = null;
+    workerTripPath = null;
+}
+
+function resetWorkerTripState() {
+    destroyWorkerTripMap();
+    workerTripPathPoints = [];
+    workerTripLastLocation = null;
+    workerTripMapOrderId = null;
+}
+
+function updateWorkerTripStatus(status) {
+    const statusEl = document.getElementById('workerTripStatus');
+    const metaEl = document.getElementById('workerTripLocationMeta');
+    if (!statusEl || !metaEl) return;
+
+    if (status === 'On The Way') {
+        statusEl.innerText = 'Live • On The Way';
+        statusEl.className = 'text-[10px] font-bold text-emerald-600';
+        metaEl.innerText = 'Live GPS sharing सुरू आहे...';
+    } else {
+        statusEl.innerText = 'Ready to start';
+        statusEl.className = 'text-[10px] font-bold text-amber-600';
+        metaEl.innerText = 'On The Way केल्यावर live GPS सुरू होईल';
+    }
+}
+
+function updateWorkerTripMap(orderId, location) {
+    if (!location || !Number.isFinite(Number(location.lat)) || !Number.isFinite(Number(location.lng))) {
+        return;
+    }
+
+    workerTripMapOrderId = orderId;
+    workerTripLastLocation = location;
+    ensureWorkerTripMap();
+    if (!workerTripMap) return;
+
+    const latLng = [Number(location.lat), Number(location.lng)];
+    if (!workerTripMarker) {
+        workerTripMarker = L.marker(latLng, {
+            icon: L.divIcon({
+                className: '',
+                html: '<div class="worker-truck-marker"><i class="fa-solid fa-truck"></i></div>',
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
+            })
+        }).addTo(workerTripMap);
+    } else {
+        workerTripMarker.setLatLng(latLng);
+    }
+
+    const lastPoint = workerTripPathPoints[workerTripPathPoints.length - 1];
+    if (!lastPoint || lastPoint[0] !== latLng[0] || lastPoint[1] !== latLng[1]) {
+        workerTripPathPoints.push(latLng);
+        if (workerTripPathPoints.length > 80) workerTripPathPoints.shift();
+        workerTripPath?.setLatLngs(workerTripPathPoints);
+    }
+
+    workerTripMap.setView(latLng, Math.max(workerTripMap.getZoom(), 15), {
+        animate: true,
+        duration: 0.5
+    });
+
+    const updatedAt = Number(location.updatedAt);
+    const metaEl = document.getElementById('workerTripLocationMeta');
+    const etaEl = document.getElementById('workerTripEta');
+    if (metaEl) {
+        metaEl.innerText = Number.isFinite(updatedAt) && updatedAt > 0
+            ? 'GPS updated ' + new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : 'Live GPS sharing सुरू आहे...';
+    }
+    if (etaEl) {
+        etaEl.innerText = Number.isFinite(Number(location.etaMinutes))
+            ? Math.max(1, Math.round(Number(location.etaMinutes))) + ' min'
+            : 'Live';
+    }
+}
+
 function publishWorkerLocation(orderId, position) {
     const coords = position.coords;
-    return database.ref("orders/" + orderId + "/workerLocation").set({
+    const liveLocation = {
         lat: Number(coords.latitude.toFixed(6)),
         lng: Number(coords.longitude.toFixed(6)),
         accuracy: Math.round(coords.accuracy || 0),
         updatedAt: firebase.database.ServerValue.TIMESTAMP
-    });
+    };
+    updateWorkerTripMap(orderId, liveLocation);
+    return database.ref("orders/" + orderId + "/workerLocation").set(liveLocation);
 }
 
 function startLocationSharing(orderId) {
@@ -470,6 +679,8 @@ function startLocationSharing(orderId) {
         return;
     }
 
+    ensureWorkerTripMap();
+    updateWorkerTripStatus('On The Way');
     stopLocationSharing(locationSharingOrderId, false);
     locationSharingOrderId = orderId;
 
@@ -771,6 +982,7 @@ function renderJobs() {
     const jobCountBadge = document.getElementById('jobCount');
     const selectedArea = document.getElementById('workingAreaSelect').value;
 
+    destroyWorkerTripMap();
     acceptedContainer.innerHTML = "";
 
     if (!isDutyOn) {
@@ -790,6 +1002,10 @@ function renderJobs() {
     const activeOrderEntry = getActiveOrderForCurrentWorker();
     const activeOrderId = activeOrderEntry ? activeOrderEntry.orderId : null;
     let pendingCount = 0;
+
+    if (workerTripMapOrderId && workerTripMapOrderId !== activeOrderId) {
+        resetWorkerTripState();
+    }
 
     keys.forEach(key => {
         const item = allOrdersData[key];
@@ -839,6 +1055,29 @@ function renderJobs() {
             <p><strong>मोबाइल:</strong> <a href="tel:${item.customerMobile}" class="text-blue-600 font-bold underline">${item.customerMobile}</a></p>
             <p><strong>पत्ता:</strong> ${item.address}</p>
             </div>
+             <div class="worker-live-card">
+                 <div class="flex items-center justify-between gap-3 mb-3">
+                     <span class="text-xs font-black tracking-[.12em] text-slate-900 flex items-center gap-2">
+                         <span class="live-dot"></span>
+                         LIVE TRACKING
+                     </span>
+                     <span id="workerTripStatus" class="text-[10px] font-bold text-amber-600">Ready to start</span>
+                 </div>
+                 <div class="worker-live-map-shell">
+                     <span class="live-map-chip"><i class="fa-solid fa-truck text-indigo-600"></i> Your live route</span>
+                     <div id="workerTripMap" aria-label="Worker live route map"></div>
+                     <div class="tracking-eta-card">
+                         <span class="text-[10px] font-bold text-slate-500">Estimated time</span>
+                         <strong id="workerTripEta">--</strong>
+                     </div>
+                 </div>
+                 <div class="flex items-center justify-between gap-2 mt-3">
+                     <span id="workerTripLocationMeta" class="text-[10px] text-slate-500">On The Way केल्यावर live GPS सुरू होईल</span>
+                     <span class="text-[10px] font-bold text-slate-600 truncate max-w-[45%]" title="${item.address}">
+                         <i class="fa-solid fa-location-dot text-red-500 mr-1"></i> Customer
+                     </span>
+                 </div>
+             </div>
             <div class="grid grid-cols-2 gap-2">
             <a href="https://maps.google.com/?q=${encodeURIComponent(item.address)}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">📍 Map</a>
             <button onclick="openChatModal('${key}', '${item.customerName}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5">💬 Chat</button>
@@ -848,6 +1087,13 @@ function renderJobs() {
             <button onclick="updateStatus('${key}', 'Completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition shadow-sm">✓ Completed</button>
             </div>`;
             acceptedContainer.appendChild(activeCard);
+
+            workerTripMapOrderId = key;
+            ensureWorkerTripMap();
+            updateWorkerTripStatus(item.status);
+            if (workerTripLastLocation) {
+                updateWorkerTripMap(key, workerTripLastLocation);
+            }
 
             if (item.status === 'On The Way') {
                 startLocationSharing(key);

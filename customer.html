@@ -198,76 +198,6 @@
             box-shadow: 0 10px 22px rgba(82, 93, 202, .22);
         }
 
-        .customer-live-card {
-            border: 1px solid rgba(91, 140, 255, .22);
-            border-radius: 1.35rem;
-            padding: .85rem;
-            background: linear-gradient(145deg, rgba(240, 247, 255, .92), rgba(255,255,255,.72));
-            box-shadow: 0 16px 28px rgba(36, 71, 150, .12), inset 0 1px 0 rgba(255,255,255,.9);
-        }
-
-        .customer-live-map-shell {
-            position: relative;
-            overflow: hidden;
-            border-radius: 1rem;
-            border: 1px solid rgba(91, 140, 255, .28);
-            box-shadow: 0 12px 24px rgba(37, 67, 142, .15);
-            background: #dfe8f5;
-        }
-
-        .live-map-chip {
-            position: absolute;
-            z-index: 500;
-            top: .75rem;
-            left: .75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            padding: .45rem .65rem;
-            border-radius: 999px;
-            color: #17213c;
-            background: rgba(255,255,255,.9);
-            box-shadow: 0 8px 18px rgba(20, 42, 93, .18);
-            font-size: .64rem;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        .live-dot {
-            width: .45rem;
-            height: .45rem;
-            border-radius: 999px;
-            background: #ef4444;
-            box-shadow: 0 0 0 5px rgba(239,68,68,.14);
-            animation: liveDotPulse 1.8s ease-in-out infinite;
-        }
-
-        .tracking-eta-card {
-            position: absolute;
-            z-index: 500;
-            left: .75rem;
-            bottom: .75rem;
-            min-width: 124px;
-            padding: .65rem .8rem;
-            border-radius: .9rem;
-            background: rgba(255,255,255,.94);
-            box-shadow: 0 10px 22px rgba(20, 42, 93, .2);
-        }
-
-        .tracking-eta-card strong {
-            display: block;
-            color: #111827;
-            font-size: 1.45rem;
-            line-height: 1.1;
-            letter-spacing: -.04em;
-        }
-
-        @keyframes liveDotPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.18); opacity: .72; }
-        }
-
         #workerLiveMap {
             height: 240px;
             min-height: 240px;
@@ -457,32 +387,21 @@
                             <p><strong>Address:</strong> <span id="statusAddress">-</span></p>
                         </div>
 
-                        <!-- Swiggy-style live tracking card -->
+                        <!-- Live Moving Tracking Map Container (Swiggy Style) -->
                         <div id="mapTrackingContainer" class="hidden pt-1">
-                            <div class="customer-live-card">
-                                <div class="flex items-center justify-between gap-3 mb-3">
-                                    <span class="text-xs font-black tracking-[.12em] text-slate-900 flex items-center gap-2">
-                                        <span class="live-dot"></span>
-                                        LIVE TRACKING
-                                    </span>
-                                    <span id="workerLocationUpdated" class="text-[10px] font-bold text-indigo-600">Location waiting...</span>
-                                </div>
-
-                                <div class="customer-live-map-shell">
-                                    <span class="live-map-chip"><i class="fa-solid fa-truck text-indigo-600"></i> Worker is moving</span>
-                                    <div id="workerLiveMap" aria-label="Worker live location map"></div>
-                                    <div class="tracking-eta-card">
-                                        <span class="text-[10px] font-bold text-slate-500">Estimated time</span>
-                                        <strong id="workerEta">--</strong>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center justify-between gap-2 mt-3">
-                                    <span id="workerLocationAccuracy" class="text-[10px] text-slate-500">Worker location मिळत आहे...</span>
-                                    <a id="trackMapBtn" href="#" target="_blank" rel="noopener" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition flex items-center justify-center gap-2 shadow-sm shrink-0">
-                                        <i class="fa-solid fa-diamond-turn-right"></i> Open directions
-                                    </a>
-                                </div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
+                                    Worker live location
+                                </span>
+                                <span id="workerLocationUpdated" class="text-[10px] text-slate-400">Location waiting...</span>
+                            </div>
+                            <div id="workerLiveMap" aria-label="Worker live location map"></div>
+                            <div class="flex items-center justify-between gap-2 mt-2">
+                                <span id="workerLocationAccuracy" class="text-[10px] text-slate-500">Worker location मिळत आहे...</span>
+                                <a id="trackMapBtn" href="#" target="_blank" rel="noopener" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl text-[11px] transition flex items-center justify-center gap-2 shadow-sm shrink-0">
+                                    <i class="fa-solid fa-diamond-turn-right"></i> Open directions
+                                </a>
                             </div>
                         </div>
 
@@ -656,15 +575,11 @@
             if (workerLocationPath) {
                 workerLocationPath.setLatLngs([]);
             }
-
-            const etaEl = document.getElementById('workerEta');
-            if (etaEl) etaEl.innerText = "--";
         }
 
         function updateWorkerLiveLocation(location) {
             const locationMeta = document.getElementById('workerLocationUpdated');
             const accuracyMeta = document.getElementById('workerLocationAccuracy');
-            const etaEl = document.getElementById('workerEta');
 
             if (!location || !Number.isFinite(Number(location.lat)) || !Number.isFinite(Number(location.lng))) {
                 locationMeta.innerText = "Location waiting...";
@@ -709,11 +624,6 @@
             locationMeta.innerText = Number.isFinite(updatedAt) && updatedAt > 0
                 ? "Updated " + new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : "Live location";
-            if (etaEl) {
-                etaEl.innerText = Number.isFinite(Number(location.etaMinutes))
-                    ? Math.max(1, Math.round(Number(location.etaMinutes))) + " min"
-                    : "Live";
-            }
             accuracyMeta.innerText = location.accuracy
                 ? "Accuracy ±" + Math.round(Number(location.accuracy)) + " m"
                 : "Live GPS location";
@@ -1080,4 +990,4 @@
         }
     </script>
 </body>
-</html>
+</html>   
